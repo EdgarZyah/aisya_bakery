@@ -18,7 +18,7 @@ const Sidebar = () => {
     <>
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 bg-background shadow-md min-h-screen px-4 py-6">
-        <img src={Logo} alt="BrandLogo" className="h-14 w-auto mb-8 mx-auto" />
+        <img src={Logo} alt="BrandLogo" className="h-20 w-auto mb-8 mx-auto" />
         <nav className="flex flex-col space-y-4">
           {navLinks.map((nav) => (
             <Link
