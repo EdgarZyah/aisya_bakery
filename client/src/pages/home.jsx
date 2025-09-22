@@ -32,7 +32,7 @@ const Home = () => {
     <main className="w-full mx-auto">
       {/* Hero Section */}
       <Hero
-        title="Selamat Datang di Bakery Kami"
+        title="Selamat Datang di Aisya Bakery"
         subtitle="Nikmati aroma segar roti dan kue kami yang dibuat dengan cinta dan bahan alami."
         ctaText="Lihat Produk"
         onCtaClick={() => alert("Navigasi ke Produk")}

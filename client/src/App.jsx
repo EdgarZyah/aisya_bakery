@@ -17,10 +17,13 @@ import Signup from "./pages/auth/signupForm";
 import Sidebar from "./components/layout/sidebar";
 
 import Dashboard from "./pages/admin/dashboard";
+import ListUser from "./pages/admin/listUser";
 import ListProduct from "./pages/admin/listProduct";
 import AddProduct from "./pages/admin/addProduct";
 /* import EditProduct from "./pages/admin/editProduct"; */
 import Order from "./pages/admin/order";
+import Testimonials from "./pages/admin/testimonials";
+import AddTestimonials from "./pages/admin/addTestimonials";
 
 const AppLayout = ({ children }) => (
   <div className="flex flex-col min-h-screen bg-[var(--color-background)] text-[var(--color-text)]">
@@ -54,7 +57,6 @@ const DashboardLayout = ({ children }) => (
     </div>
 
     {/* Navbar untuk desktop, jika dibutuhkan */}
-
   </div>
 );
 
@@ -128,6 +130,14 @@ const App = () => {
           }
         />
         <Route
+          path="/admin/list-user"
+          element={
+            <DashboardLayout>
+              <ListUser />
+            </DashboardLayout>
+          }
+        />
+        <Route
           path="/admin/list-product"
           element={
             <DashboardLayout>
@@ -156,6 +166,21 @@ const App = () => {
           element={
             <DashboardLayout>
               <Order />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/admin/testimonials"
+          element={
+            <DashboardLayout>
+              <Testimonials />
+            </DashboardLayout>
+          }
+        /><Route
+          path="/admin/testimonials/add"
+          element={
+            <DashboardLayout>
+              <AddTestimonials />
             </DashboardLayout>
           }
         />

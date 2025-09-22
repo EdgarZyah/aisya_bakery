@@ -5,9 +5,10 @@ import Logo from "../../assets/logo.png";
 
 const navLinks = [
   { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Users", to: "/admin/list-user" },
   { label: "Products", to: "/admin/list-product" },
   { label: "Orders", to: "/admin/orders" },
-  { label: "Profile", to: "/admin/profile" },
+    { label: "Testimonials", to: "/admin/testimonials" },
 ];
 
 const Sidebar = () => {

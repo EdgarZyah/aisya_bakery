@@ -26,7 +26,7 @@ const ListProduct = () => {
   };
 
   return (
-    <div className="p-6 bg-[var(--color-background)] text-[var(--color-text)] min-h-screen">
+    <div className="p-6 bg-purewhite text-[var(--color-text)] min-h-screen">
       <div className="flex justify-between mb-6">
         <h2 className="text-2xl font-semibold">List Produk</h2>
         <Link

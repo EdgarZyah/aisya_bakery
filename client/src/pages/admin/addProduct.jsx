@@ -53,7 +53,7 @@ const AddProduct = () => {
   };
 
   return (
-    <div className="p-6 bg-purewhite text-[var(--color-text)] min-h-screen max-w-2xl mx-auto rounded shadow-lg">
+    <div className="p-6 bg-purewhite text-[var(--color-text)] min-h-screen mx-auto rounded shadow-lg">
       <h2 className="text-2xl font-semibold mb-6">Tambah Produk Baru</h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div>
