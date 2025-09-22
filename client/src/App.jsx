@@ -7,6 +7,7 @@ import WhatsAppFloating from "./components/waFloating";
 
 import Home from "./pages/home";
 import Products from "./pages/products";
+import ProductPage from "./pages/productPage";
 import Contact from "./pages/contact";
 import Checkout from "./pages/checkout";
 import NotFoundPage from "./pages/notFound";
@@ -77,6 +78,13 @@ const App = () => {
           element={
             <AppLayout>
               <Products />
+            </AppLayout>
+          }
+        /><Route
+          path="/products-page"
+          element={
+            <AppLayout>
+              <ProductPage />
             </AppLayout>
           }
         />
