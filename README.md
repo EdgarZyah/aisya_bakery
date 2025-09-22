@@ -34,9 +34,9 @@ Node.js (LTS versions 18.x or 20.x are recommended)
 
 ### initial user in seeder
 
-email    : admin@shakillashop.com
+email    : -
 
-password : 1234567890
+password : -
 
 ### Run the server
     
