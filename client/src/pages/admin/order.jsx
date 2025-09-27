@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import Table from "../../components/common/table";
 import Modal from "../../components/common/modal";
-import Receipt from "../../components/receipt";
 import Loader from "../../components/common/loader";
-import Card from "../../components/common/card";
+import Button from "../../components/common/button";
+import { FaFileExcel } from 'react-icons/fa';
 
 const API_URL = "http://localhost:5000/api/orders";
 
@@ -71,6 +71,11 @@ const Order = () => {
     }
   };
 
+  const handleExport = (format) => {
+    const token = localStorage.getItem("token");
+    window.open(`${API_URL}/export/${format}?token=${token}`, "_blank");
+  };
+
   const columns = [
     { header: "Tanggal", accessor: "createdAt", cell: (row) => new Date(row.createdAt).toLocaleDateString() },
     { header: "ID Pesanan", accessor: "id" },
@@ -117,7 +122,14 @@ const Order = () => {
 
   return (
     <div className="p-6 min-h-screen bg-[var(--color-background)] text-[var(--color-text)]">
-      <h2 className="text-2xl font-semibold mb-4">Riwayat Transaksi</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-semibold">Riwayat Transaksi</h2>
+        <div className="flex gap-2">
+          <Button variant="primary" onClick={() => handleExport('excel')} className="flex items-center gap-2">
+            <FaFileExcel /> Unduh Excel
+          </Button>
+        </div>
+      </div>
       <Table
         columns={columns}
         data={orders}

@@ -10,6 +10,7 @@ const admin = require('../middleware/admin');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const ExcelJS = require('exceljs');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -153,7 +154,7 @@ router.put('/:id/status', auth, admin, async (req, res) => {
 router.get('/user-orders', auth, async (req, res) => {
   try {
     const orders = await Order.findAll({
-      where: { userId: req.user.id }, // Perbaikan: Memastikan filter menggunakan userId
+      where: { userId: req.user.id },
       include: [
         {
           model: OrderItem,
@@ -171,6 +172,110 @@ router.get('/user-orders', auth, async (req, res) => {
   } catch (error) {
     console.error("Error fetching user orders:", error);
     res.status(500).json({ message: "Gagal memuat pesanan." });
+  }
+});
+
+// Rute ekspor ke Excel (Hanya Admin)
+router.get('/export/excel', auth, admin, async (req, res) => {
+  try {
+    const orders = await Order.findAll({
+      include: [
+        { model: User, as: 'user', attributes: ['name', 'email', 'address'] },
+        {
+          model: OrderItem,
+          as: 'orderItems',
+          include: {
+            model: Product,
+            as: 'product',
+            attributes: ['name']
+          }
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Ringkasan Transaksi');
+
+    // Menentukan kolom dan properti untuk AutoFilter dan AutoWidth
+    worksheet.columns = [
+      { header: 'ID Pesanan', key: 'id', width: 15 },
+      { header: 'Nama Pembeli', key: 'buyerName', width: 25 },
+      { header: 'Email Pembeli', key: 'buyerEmail', width: 30 },
+      { header: 'Alamat Pengiriman', key: 'shippingAddress', width: 40 },
+      { header: 'Item', key: 'items', width: 50 },
+      { header: 'Total', key: 'total', width: 20, style: { numFmt: '"Rp"#,##0' } },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Tanggal', key: 'date', width: 20 }
+    ];
+
+    // Menerapkan gaya header
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFB08968' }, // Warna primer
+      };
+      cell.font = {
+        color: { argb: 'FFFFFFFF' },
+        bold: true,
+      };
+      cell.alignment = {
+        vertical: 'middle',
+        horizontal: 'center'
+      };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+
+    // Menambahkan data
+    let totalRevenue = 0;
+    orders.forEach(order => {
+      totalRevenue += order.total;
+      const itemsList = order.orderItems.map(item => `${item.product.name} (${item.quantity}x)`).join(', ');
+      worksheet.addRow({
+        id: order.id,
+        buyerName: order.user?.name || 'Pengguna Tidak Terdaftar',
+        buyerEmail: order.user?.email || 'N/A',
+        shippingAddress: order.user?.address || 'N/A',
+        items: itemsList,
+        total: order.total,
+        status: order.status,
+        date: order.createdAt.toLocaleDateString()
+      });
+    });
+
+    // Menambahkan baris total pendapatan
+    worksheet.addRow([]);
+    const totalRow = worksheet.addRow({
+      buyerName: 'Total Pendapatan:',
+      total: totalRevenue
+    });
+    
+    // Menerapkan gaya pada baris total
+    totalRow.getCell('B').font = { bold: true };
+    totalRow.getCell('F').font = { bold: true };
+    totalRow.getCell('F').numFmt = '"Rp"#,##0';
+    totalRow.getCell('B').alignment = { horizontal: 'right' };
+    
+    // Menerapkan filter
+    worksheet.autoFilter = {
+      from: 'A1',
+      to: 'H1',
+    };
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=ringkasan_transaksi.xlsx');
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error('Export Excel error:', error);
+    res.status(500).json({ message: 'Gagal mengekspor data ke Excel.' });
   }
 });
 
