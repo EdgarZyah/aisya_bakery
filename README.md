@@ -34,9 +34,9 @@ Node.js (LTS versions 18.x or 20.x are recommended)
 
 ### initial user in seeder
 
-email    : -
+email    : admin@aisya.com
 
-password : -
+password : password123
 
 ### Run the server
     
