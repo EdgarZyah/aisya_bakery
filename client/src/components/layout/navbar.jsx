@@ -1,31 +1,23 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiShoppingCart, FiMenu, FiX } from "react-icons/fi";
+import { FiShoppingCart, FiMenu, FiX, FiLogOut } from "react-icons/fi";
 import CartDropdown from "../cartDropdown";
 import Logo from "../../assets/logo.png";
 
-const Navbar = () => {
+const Navbar = ({ cartItems, onRemoveItem }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "Roti Tawar",
-      quantity: 2,
-      price: "Rp15.000",
-      image: "https://via.placeholder.com/50x50?text=Roti+Tawar",
-    },
-    {
-      id: 2,
-      name: "Donat Coklat",
-      quantity: 1,
-      price: "Rp10.000",
-      image: "https://via.placeholder.com/50x50?text=Donat",
-    },
-  ]);
+  const [user, setUser] = useState(null);
 
   const cartRef = useRef(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -37,13 +29,17 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleRemoveItem = (id) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
-  };
-  const navigate = useNavigate();
   const handleCheckout = () => {
-    navigate("/checkout");
+    navigate("/checkout", { state: { cartItems } });
     setCartOpen(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+    navigate("/");
+    alert("Anda telah logout.");
   };
 
   return (
@@ -62,7 +58,7 @@ const Navbar = () => {
             </Link>
           </div>
 
-          <div className="hidden md:flex space-x-8">
+          <div className="hidden md:flex space-x-8 items-center">
             <Link
               to="/"
               className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-[var(--color-accent)] hover:text-[var(--color-secondary)] transition"
@@ -81,6 +77,14 @@ const Navbar = () => {
             >
               Contact
             </Link>
+            {user && (
+              <Link
+                to={user.role === "admin" ? "/admin/dashboard" : "/user/dashboard"}
+                className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-secondary)] transition"
+              >
+                Dashboard
+              </Link>
+            )}
           </div>
 
           <div className="flex items-center space-x-4">
@@ -100,10 +104,22 @@ const Navbar = () => {
               <CartDropdown
                 items={cartItems}
                 isOpen={cartOpen}
-                onRemoveItem={handleRemoveItem}
+                onRemoveItem={onRemoveItem}
                 onCheckout={handleCheckout}
               />
             </div>
+            {user ? (
+              <button onClick={handleLogout} aria-label="Logout" className="p-2 rounded hover:bg-red-500 hover:text-white transition">
+                <FiLogOut className="h-6 w-6 text-[var(--color-primary)]" />
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-white bg-[var(--color-primary)] hover:bg-[var(--color-secondary)] transition"
+              >
+                Login
+              </Link>
+            )}
 
             <div className="md:hidden">
               <button
@@ -140,19 +156,37 @@ const Navbar = () => {
             Products
           </Link>
           <Link
-            to="/about"
-            className="block px-4 py-2 text-base font-medium hover:bg-[var(--color-accent)] hover:text-[var(--color-secondary)] transition"
-            onClick={() => setMenuOpen(false)}
-          >
-            About
-          </Link>
-          <Link
             to="/contact"
             className="block px-4 py-2 text-base font-medium hover:bg-[var(--color-accent)] hover:text-[var(--color-secondary)] transition"
             onClick={() => setMenuOpen(false)}
           >
             Contact
           </Link>
+          {user && (
+            <Link
+              to={user.role === "admin" ? "/admin/dashboard" : "/user/dashboard"}
+              className="block px-4 py-2 text-base font-medium hover:bg-[var(--color-accent)] hover:text-[var(--color-secondary)] transition"
+              onClick={() => setMenuOpen(false)}
+            >
+              Dashboard
+            </Link>
+          )}
+          {user ? (
+            <button
+              onClick={handleLogout}
+              className="w-full text-left px-4 py-2 text-base font-medium hover:bg-red-500 hover:text-white transition"
+            >
+              Logout
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="block px-4 py-2 text-base font-medium hover:bg-[var(--color-accent)] hover:text-[var(--color-secondary)] transition"
+              onClick={() => setMenuOpen(false)}
+            >
+              Login
+            </Link>
+          )}
         </div>
       )}
     </nav>

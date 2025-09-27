@@ -1,110 +1,97 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import Button from "../components/common/button";
+import Loader from "../components/common/loader";
+import NotFoundPage from "./notFound";
 
-const ProductPage = () => {
-  const product = {
-    name: "Roti Tawar Gandum",
-    price: 27000,
-    imageUrl: "https://media.istockphoto.com/id/1163707527/photo/breads-assortment-background.jpg?s=612x612&w=0&k=20&c=5sOEI3D3ltan_Cs4RRE3O64z_WAdaaiELV_dDov6k3k=",
-    isPreorder: false,
-    description:
-      "Roti tawar gandum sehat dan lezat, cocok untuk sarapan dan snack sehari-hari.",
-    type: "Roti Tawar",
-    images: [
-      "https://media.istockphoto.com/id/1163707527/photo/breads-assortment-background.jpg?s=612x612&w=0&k=20&c=5sOEI3D3ltan_Cs4RRE3O64z_WAdaaiELV_dDov6k3k=",
-    ]
-  };
+const API_URL = "http://localhost:5000/api/products";
 
+const ProductPage = ({ onAddToCart }) => {
+  const { id } = useParams();
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [mainImage, setMainImage] = useState(product.imageUrl);
 
-  const handleQuantityChange = (e) => {
-    let val = parseInt(e.target.value, 10);
-    if (isNaN(val) || val < 1) val = 1;
-    setQuantity(val);
-  };
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await fetch(`${API_URL}/${id}`);
+        if (!response.ok) {
+          throw new Error("Product not found");
+        }
+        const data = await response.json();
+        setProduct(data);
+      } catch (e) {
+        console.error(e);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProduct();
+  }, [id]);
 
   const handleAddToCart = () => {
-    alert(
-      `Ditambahkan ${quantity} item ${product.name}, total Rp${(
-        product.price * quantity
-      ).toLocaleString("id-ID")}`
-    );
+    if (onAddToCart && product) {
+      const itemToAdd = {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.imageUrl,
+        quantity: quantity,
+      };
+      onAddToCart(itemToAdd);
+      alert(`${itemToAdd.name} (${itemToAdd.quantity}) berhasil ditambahkan ke keranjang.`);
+    }
   };
 
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen"><Loader /></div>;
+  }
+
+  if (error || !product) {
+    return <NotFoundPage />;
+  }
+
   return (
-    <main className="max-w-5xl mx-auto p-8 min-h-screen rounded-lg">
-      <div className="flex flex-col md:flex-row gap-12">
-        {/* Kiri: gambar utama dan thumbnail */}
-        <div className="flex flex-col items-center w-full md:w-[55%]">
-          <div className="w-full">
-            <img
-              src={mainImage}
-              alt={product.name}
-              className="rounded-lg w-full object-cover"
-              style={{ maxHeight: "400px" }}
-            />
-          </div>
-          <div className="flex mt-4 space-x-3">
-            {product.images.map((thumb, idx) => (
-              <img
-                key={idx}
-                src={thumb}
-                alt={`Thumbnail ${idx + 1}`}
-                className={`cursor-pointer rounded border ${
-                  mainImage === thumb
-                    ? "border-blue-500"
-                    : "border-gray-300"
-                }`}
-                style={{ width: "64px", height: "64px" }}
-                onClick={() => setMainImage(thumb)}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Kanan: info produk dan checkout */}
-        <div className="w-full md:w-[45%] flex flex-col justify-start">
-          {product.isPreorder && (
-            <span className="inline-block bg-pink-100 text-pink-800 px-3 py-1 rounded text-xs font-semibold mb-2">
-              Preorder
-            </span>
-          )}
-
-          <h1 className="text-2xl font-bold mb-2">{product.name}</h1>
-          <div className="text-xl font-semibold text-gray-900 mb-4">
-            Rp{product.price.toLocaleString("id-ID")},00
-          </div>
-
-          <p className="mb-6">{product.description}</p>
-
-          <div className="flex items-center gap-2 my-1 max-w-xs">
-            <label htmlFor="quantity" className="font-medium">
-              Jumlah:
-            </label>
-            <input
-              type="number"
-              id="quantity"
-              min={1}
-              value={quantity}
-              onChange={handleQuantityChange}
-              className="border p-2 rounded w-20"
-            />
-            <Button onClick={handleAddToCart} className="px-8 py-2">
-              Add to cart
-            </Button>
-          </div>
-
-          <div className="mt-8">
-            <div className="font-semibold mb-2">Product Information</div>
-            <div className="mb-1 flex">
-              <span className="text-gray-600 w-32">Type</span>
-              <span className="ml-2 font-medium">{product.type}</span>
-            </div>
-          </div>
-        </div>
+    <div className="max-w-6xl mx-auto p-6 md:p-12 flex flex-col md:flex-row gap-8 md:gap-12 text-[var(--color-text)]">
+      <div className="md:w-1/2">
+        <img
+          src={`http://localhost:5000/${product.imageUrl}`}
+          alt={product.name}
+          className="w-full h-auto object-cover rounded-lg shadow-md"
+        />
       </div>
-    </main>
+      <div className="md:w-1/2 flex flex-col justify-center">
+        <h1 className="text-3xl md:text-4xl font-bold mb-4">{product.name}</h1>
+        <p className="text-lg mb-6 leading-relaxed">{product.description}</p>
+        <div className="text-2xl font-bold text-[var(--color-primary)] mb-6">
+          Rp {product.price.toLocaleString("id-ID")}
+        </div>
+        <div className="flex items-center space-x-4 mb-8">
+          <label htmlFor="quantity" className="font-semibold">Jumlah:</label>
+          <div className="flex items-center border rounded-lg overflow-hidden">
+            <button
+              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              className="px-4 py-2 hover:bg-gray-100"
+            >
+              -
+            </button>
+            <span className="px-4 py-2 border-l border-r">{quantity}</span>
+            <button
+              onClick={() => setQuantity(quantity + 1)}
+              className="px-4 py-2 hover:bg-gray-100"
+            >
+              +
+            </button>
+          </div>
+        </div>
+        <Button variant="primary" onClick={handleAddToCart}>
+          Tambah ke Keranjang
+        </Button>
+      </div>
+    </div>
   );
 };
 

@@ -1,126 +1,123 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import Button from "../components/common/button";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Card from "../components/common/card";
+import Button from "../components/common/button";
+import Loader from "../components/common/loader";
+import Receipt from "../components/receipt";
 
-const Checkout = () => {
-  // Dummy data produk. Di implementasi nyata, data akan diambil dari API.
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "Bolu Coklat Moist",
-      variant: "Ukuran Medium",
-      price: 125000,
-      image: "https://via.placeholder.com/300x180?text=Bolu+Coklat",
-      quantity: 1,
-    },
-    {
-      id: 2,
-      name: "Roti Keju Ganda",
-      variant: "Reguler",
-      price: 45000,
-      image: "https://via.placeholder.com/300x180?text=Roti+Keju",
-      quantity: 2,
-    },
-  ]);
+const Checkout = ({ cartItems, onClearCart }) => {
+  const [loading, setLoading] = useState(false);
+  const [orderComplete, setOrderComplete] = useState(false);
+  const [orderData, setOrderData] = useState(null);
+  const navigate = useNavigate();
 
-  const handleQty = (id, delta) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + delta) }
-          : item
-      )
-    );
-  };
-
-  // Hitung subtotal dan total
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+  const total = cartItems.reduce(
+    (acc, item) => acc + item.price * item.quantity,
     0
   );
-  const shipping = 15000;
-  const total = subtotal + shipping;
+
+  const handleCheckout = async () => {
+    setLoading(true);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Anda harus login untuk melanjutkan checkout.");
+      navigate("/login");
+      setLoading(false);
+      return;
+    }
+
+    const payload = {
+      items: cartItems.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+      })),
+    };
+
+    try {
+      const response = await fetch("http://localhost:5000/api/orders/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-auth-token": token,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Gagal memproses pesanan.");
+      }
+
+      setOrderData(data);
+      setOrderComplete(true);
+      onClearCart();
+      
+      // Clear cart items from localStorage as well if you're using it to persist the cart
+      localStorage.removeItem("cartItems"); 
+
+      alert("Pesanan berhasil dibuat!");
+    } catch (error) {
+      console.error("Checkout Error:", error);
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (orderComplete) {
+    return (
+      <div className="flex justify-center items-center min-h-screen p-6">
+        <Receipt orderData={orderData} />
+      </div>
+    );
+  }
+
+  if (cartItems.length === 0) {
+    return (
+      <div className="text-center p-6 min-h-screen">
+        <h2 className="text-2xl font-bold mb-4">Keranjang Belanja Kosong</h2>
+        <p>Silakan tambahkan produk ke keranjang untuk melanjutkan.</p>
+        <Link to="/products" className="text-[var(--color-primary)] hover:underline mt-4 inline-block">
+          Jelajahi Produk
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-[var(--color-background)] flex justify-center items-center py-12 px-4 text-[var(--color-text)]">
-      <div className="flex flex-col lg:flex-row gap-10 w-full max-w-5xl">
-        {/* Detail Produk & Kuantitas (Kiri) */}
-        <div className="flex-1">
-          <Card>
-            <h2 className="text-xl font-bold mb-6">Keranjang Belanja</h2>
+    <div className="p-6">
+      <Card className="max-w-3xl mx-auto">
+        <h2 className="text-2xl font-bold mb-4">Checkout</h2>
+        <div className="mb-6">
+          <h3 className="text-xl font-semibold mb-2">Ringkasan Pesanan</h3>
+          <ul className="space-y-2 mb-4">
             {cartItems.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 border-b border-gray-200 pb-4 mb-4 last:border-b-0 last:pb-0"
-              >
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-24 h-24 rounded-lg object-cover flex-shrink-0"
-                />
-                <div className="flex-grow">
-                  <h3 className="font-semibold text-lg">{item.name}</h3>
-                  <div className="text-gray-500 text-sm mb-1">
-                    Variant - {item.variant}
-                  </div>
-                  <div className="font-bold text-[var(--color-primary)] text-lg">
-                    Rp {item.price.toLocaleString("id-ID")}
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3 mt-2 sm:mt-0">
-                  <button
-                    onClick={() => handleQty(item.id, -1)}
-                    className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-xl hover:bg-gray-100 disabled:opacity-50"
-                    disabled={item.quantity === 1}
-                  >
-                    –
-                  </button>
-                  <span className="px-3 select-none font-semibold">
-                    {item.quantity}
-                  </span>
-                  <button
-                    onClick={() => handleQty(item.id, 1)}
-                    className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-xl hover:bg-gray-100"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+              <li key={item.id} className="flex justify-between">
+                <span>
+                  {item.name} ({item.quantity}x)
+                </span>
+                <span>Rp {(item.price * item.quantity).toLocaleString('id-ID')}</span>
+              </li>
             ))}
-            <Link
-              to="/products"
-              className="mt-6 inline-block font-semibold text-[var(--color-primary)] hover:text-[var(--color-secondary)] transition"
-            >
-              &larr; Lanjutkan Belanja
-            </Link>
-          </Card>
+          </ul>
+          <div className="border-t pt-4 font-bold text-lg flex justify-between">
+            <span>Total</span>
+            <span>Rp {total.toLocaleString('id-ID')}</span>
+          </div>
         </div>
-
-        {/* Ringkasan Pesanan (Kanan) */}
-        <div className="flex-1 max-w-xs">
-          <Card>
-            <h4 className="font-semibold text-lg mb-6">Ringkasan Pesanan</h4>
-            <div className="flex justify-between mb-3">
-              <span>Subtotal</span>
-              <span>Rp {subtotal.toLocaleString("id-ID")}</span>
-            </div>
-            <div className="flex justify-between mb-3 text-gray-500">
-              <span>Biaya Pengiriman</span>
-              <span>Rp {shipping.toLocaleString("id-ID")}</span>
-            </div>
-            <hr className="my-4 border-gray-300" />
-            <div className="flex justify-between items-center text-xl font-bold mb-6">
-              <span>Total</span>
-              <span>Rp {total.toLocaleString("id-ID")}</span>
-            </div>
-            <Button variant="primary" className="w-full py-3">
-              Lanjutkan ke Pembayaran
-            </Button>
-          </Card>
+        <div className="mt-6">
+          <Button
+            variant="primary"
+            onClick={handleCheckout}
+            disabled={loading}
+            className="w-full"
+          >
+            {loading ? <Loader /> : "Lanjutkan Pembayaran"}
+          </Button>
         </div>
-      </div>
-    </main>
+      </Card>
+    </div>
   );
 };
 

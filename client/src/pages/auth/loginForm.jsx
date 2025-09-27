@@ -6,13 +6,33 @@ const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const navigate = useNavigate();
 
-  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Login logic here
-    alert(`Login dengan email : ${form.email}`);
-    navigate("/dashboard");
+
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Login failed");
+      }
+
+      const data = await response.json();
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      alert("Login berhasil!");
+      navigate(data.user.role === 'admin' ? "/admin/dashboard" : "/user/dashboard");
+    } catch (error) {
+      console.error("Login Error:", error.message);
+      alert(`Login gagal: ${error.message}`);
+    }
   };
 
   return (

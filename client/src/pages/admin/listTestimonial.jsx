@@ -1,46 +1,44 @@
-// aisya_bakery/client/src/pages/admin/listProduct.jsx
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Table from "../../components/common/table";
 import Button from "../../components/common/button";
 import Loader from "../../components/common/loader";
 
-const API_URL = "http://localhost:5000/api/products";
+const API_URL = "http://localhost:5000/api/testimonials";
 
-const ListProduct = () => {
-  const [products, setProducts] = useState([]);
+const ListTestimonial = () => {
+  const [testimonials, setTestimonials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchProducts();
+    fetchTestimonials();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchTestimonials = async () => {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      // Permintaan sekarang menyertakan data kategori
       const response = await fetch(API_URL, {
         headers: {
           "x-auth-token": token,
         },
       });
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.msg || "Gagal memuat testimonial");
       }
       const data = await response.json();
-      setProducts(data);
+      setTestimonials(data);
     } catch (e) {
-      console.error("Failed to fetch products:", e);
-      setError("Gagal memuat data produk.");
+      setError(e.message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Yakin ingin menghapus produk ini?")) {
+    if (window.confirm("Yakin ingin menghapus testimonial ini?")) {
       const token = localStorage.getItem("token");
       try {
         const response = await fetch(`${API_URL}/${id}`, {
@@ -51,10 +49,10 @@ const ListProduct = () => {
         });
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.msg || "Gagal menghapus produk.");
+          throw new Error(errorData.msg || "Gagal menghapus testimonial.");
         }
-        alert("Produk berhasil dihapus!");
-        fetchProducts();
+        alert("Testimonial berhasil dihapus!");
+        fetchTestimonials();
       } catch (e) {
         alert(`Error: ${e.message}`);
       }
@@ -62,23 +60,31 @@ const ListProduct = () => {
   };
 
   const columns = [
-    { header: "#", accessor: "index", cell: (row, idx) => idx + 1 },
-    { header: "Nama Produk", accessor: "name" },
+    { header: "ID", accessor: "id" },
+    { header: "Nama", accessor: "name" },
+    { header: "Komentar", accessor: "comment" },
     {
-      header: "Kategori",
-      accessor: "category.name",
-      cell: (row) => row.category ? row.category.name : "Uncategorized"
+      header: "Avatar",
+      accessor: "avatar",
+      cell: (row) =>
+        row.avatar ? (
+          <img
+            src={`http://localhost:5000/${row.avatar}`}
+            alt="avatar"
+            className="w-12 h-12 rounded-full object-cover"
+          />
+        ) : (
+          "Tidak ada"
+        ),
     },
-    {
-      header: "Harga (Rp)",
-      accessor: "price",
-      cell: (row) => `Rp ${row.price.toLocaleString("id-ID")}`,
-    },
-    { header: "Featured", accessor: "isFeatured", cell: (row) => (row.isFeatured ? "Ya" : "Tidak") },
   ];
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen"><Loader /></div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader />
+      </div>
+    );
   }
 
   if (error) {
@@ -88,18 +94,18 @@ const ListProduct = () => {
   return (
     <div className="p-6 bg-[var(--color-background)] text-[var(--color-text)] min-h-screen">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold">List Produk</h2>
-        <Link to="/admin/add-product">
-          <Button variant="primary">Tambah Produk</Button>
+        <h2 className="text-2xl font-semibold">Daftar Testimonial</h2>
+        <Link to="/admin/add-testimonial">
+          <Button variant="primary">Tambah Testimonial</Button>
         </Link>
       </div>
       <Table
         columns={columns}
-        data={products}
+        data={testimonials}
         renderActions={(row) => (
           <>
             <Link
-              to={`/admin/edit-product/${row.id}`}
+              to={`/admin/edit-testimonial/${row.id}`}
               className="text-blue-600 hover:underline mr-2"
             >
               Edit
@@ -117,4 +123,4 @@ const ListProduct = () => {
   );
 };
 
-export default ListProduct;
+export default ListTestimonial;

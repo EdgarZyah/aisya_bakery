@@ -1,31 +1,7 @@
 import React from "react";
 import Hero from "../components/hero";
 import FeaturedProducts from "../components/featuredProducts";
-import BreadBanner from "../assets/Bread_and_wheat_on_wooden_background.jpg";
-
-const testimonials = [
-  {
-    id: 1,
-    name: "Andi Saputra",
-    comment:
-      "Roti dan kue di sini selalu segar dan rasanya luar biasa! Saya sangat puas dengan pelayanannya.",
-    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-  },
-  {
-    id: 2,
-    name: "Sari Dewi",
-    comment:
-      "Tempat yang tepat untuk mencari roti enak. Pilihan produk lengkap dan stafnya ramah.",
-    avatar: "https://randomuser.me/api/portraits/women/45.jpg",
-  },
-  {
-    id: 3,
-    name: "Budi Hartono",
-    comment:
-      "Kue ulang tahun yang saya pesan sangat cantik dan lezat. Recomended!",
-    avatar: "https://randomuser.me/api/portraits/men/56.jpg",
-  },
-];
+import Testimoni from "../components/testimoni"; // Impor komponen Testimoni
 
 const Home = () => {
   return (
@@ -34,18 +10,15 @@ const Home = () => {
       <Hero
         title="Selamat Datang di Aisya Bakery"
         subtitle="Nikmati aroma segar roti dan kue kami yang dibuat dengan cinta dan bahan alami."
-        ctaText="Lihat Produk"
-        onCtaClick={() => alert("Navigasi ke Produk")}
       />
-
-      {/* About Us Section with background image */}
-      <section className="relative flex w-full min-h-[800px] bg-primary -mb-12">
-                <img
+      {/* About Us Section */}
+      <section className="relative flex w-full min-h-[800px] bg-[var(--color-primary)] -mb-12">
+        <img
           src="https://www.shutterstock.com/image-photo/fresh-baked-bread-flour-wheat-600nw-2409821173.jpg"
           alt="Bread pattern background"
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="relative z-10 max-w-5xl flex flex-col items-center mx-12 my-6 sm:m-auto px-6 py-16 text-center bg-white text-primary rounded-lg">
+        <div className="relative z-10 max-w-5xl flex flex-col items-center mx-12 my-6 sm:m-auto px-6 py-16 text-center bg-white text-[var(--color-primary)] rounded-lg">
           <h2 className="text-3xl font-semibold mb-4">Tentang Kami</h2>
           <p className="max-w-3xl mx-auto leading-relaxed">
             Kami adalah bakery lokal dengan pengalaman puluhan tahun yang secara
@@ -68,7 +41,6 @@ const Home = () => {
           </p>
         </div>
       </section>
-
       {/* Featured Products Section */}
       <section className="max-w-5xl mx-auto px-6 py-16 mt-10">
         <div className="w-full mb-8">
@@ -85,34 +57,23 @@ const Home = () => {
         </div>
         <FeaturedProducts />
       </section>
-
-      {/* Testimonials Section with background image */}
-      <section className="relative w-full min-h-[500px] -mb-16">
-        <img
-          src={BreadBanner}
-          alt="Bread and Wheat on Wooden Background"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-3 gap-8 text-[var(--color-background)]">
-          <h2 className="col-span-full text-center text-3xl font-semibold mb-12">
-            Testimonials
-          </h2>
-          {testimonials.map(({ id, name, comment, avatar }) => (
-            <div
-              key={id}
-              className="flex flex-col items-center bg-[var(--color-primary)] bg-opacity-70 rounded-lg p-6 shadow-lg"
-            >
-              <img
-                src={avatar}
-                alt={name}
-                className="rounded-full w-24 h-24 mb-4 object-cover border-2 border-[var(--color-background)]"
-              />
-              <p className="italic mb-4 text-center">"{comment}"</p>
-              <h4 className="font-semibold">{name}</h4>
-            </div>
-          ))}
+      {/* Map Section */}
+      <div className="bg-[var(--color-primary)] mx-auto py-10 px-6">
+        <div className="max-w-5xl m-auto rounded-lg space-y-6 overflow-hidden shadow-md aspect-video">
+          <h1 className="text-center text-3xl font-semibold text-purewhite">
+            Lokasi Toko Kami
+          </h1>
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3957.2064722791883!2d108.6799144!3d-7.3306931!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e6f7d7f00d30735%3A0x3ba843376824279d!2sAisya%20Cake%2C%20Bread%20%26%20Cookies!5e0!3m2!1sid!2sid!4v1758958114116!5m2!1sid!2sid"
+            className="w-full h-full border-0"
+            allowfullscreen="true"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+          ></iframe>
         </div>
-      </section>
+      </div>
+      {/* Testimonials Section (Carousel) */}
+      <Testimoni />
     </main>
   );
 };

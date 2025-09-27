@@ -1,70 +1,126 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Table from "../../components/common/table";
 import Modal from "../../components/common/modal";
 import Receipt from "../../components/receipt";
+import Loader from "../../components/common/loader";
+import Card from "../../components/common/card";
+
+const API_URL = "http://localhost:5000/api/orders";
 
 const Order = () => {
-  const [selected, setSelected] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const transactions = [
-    {
-      orderId: "INV202309221234",
-      date: "2025-09-22",
-      buyerName: "Jane Doe",
-      items: [
-        { id: 1, name: "Roti Tawar Spesial", quantity: 2, price: 35000 },
-        { id: 2, name: "Donat Coklat", quantity: 1, price: 25000 },
-      ],
-      subtotal: 95000,
-      shippingCost: 10000,
-      total: 105000,
-      paymentMethod: "Transfer Bank",
-      shippingAddress: "Jl. Merpati no 21, Jakarta",
-      notes: "Tolong dikirim pagi hari",
-      paymentProofUrl:
-        "https://dummyimage.com/400x300/ced4da/212529.png&text=Bukti+Pembayaran",
-    },
-    {
-      orderId: "INV202309210098",
-      date: "2025-09-21",
-      buyerName: "Jane Doe",
-      items: [{ id: 3, name: "Kue Keju", quantity: 1, price: 40000 }],
-      subtotal: 40000,
-      shippingCost: 10000,
-      total: 50000,
-      paymentMethod: "E-Wallet",
-      shippingAddress: "Jl. Merpati no 21, Jakarta",
-      notes: "",
-      paymentProofUrl: null,
-    },
-  ];
+  const fetchOrders = async () => {
+    setLoading(true);
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(API_URL, {
+        headers: { "x-auth-token": token },
+      });
+      if (!response.ok) {
+        throw new Error("Gagal memuat data pesanan.");
+      }
+      const data = await response.json();
+      setOrders(data);
+    } catch (e) {
+      console.error(e);
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const handleDetail = (order) => {
+    setSelectedOrder(order);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedOrder(null);
+  };
+
+  const handleStatusChange = async (orderId, newStatus) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${API_URL}/${orderId}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-auth-token": token,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!response.ok) {
+        throw new Error("Gagal memperbarui status pesanan.");
+      }
+      setOrders(orders.map(order =>
+        order.id === orderId ? { ...order, status: newStatus } : order
+      ));
+      alert("Status pesanan berhasil diperbarui!");
+    } catch (e) {
+      alert(`Error: ${e.message}`);
+    }
+  };
 
   const columns = [
-    { header: "Tanggal", accessor: "date" },
-    { header: "ID Pesanan", accessor: "orderId" },
+    { header: "Tanggal", accessor: "createdAt", cell: (row) => new Date(row.createdAt).toLocaleDateString() },
+    { header: "ID Pesanan", accessor: "id" },
+    {
+      header: "Nama Pembeli",
+      accessor: "user.name",
+      cell: (row) => row.user?.name || "Pengguna Tidak Terdaftar",
+    },
     {
       header: "Total",
       accessor: "total",
-      cell: (row) => "Rp " + row.total.toLocaleString("id-ID"),
+      cell: (row) => `Rp ${row.total.toLocaleString("id-ID")}`,
     },
-    { header: "Metode", accessor: "paymentMethod" },
+    {
+      header: "Status",
+      accessor: "status",
+      cell: (row) => (
+        <select
+          value={row.status}
+          onChange={(e) => handleStatusChange(row.id, e.target.value)}
+          className="p-1 border rounded"
+        >
+          <option value="pending">Pending</option>
+          <option value="processed">Diproses</option>
+          <option value="shipped">Dikirim</option>
+          <option value="delivered">Diterima</option>
+          <option value="cancelled">Dibatalkan</option>
+        </select>
+      ),
+    },
   ];
 
-  const handleDetail = (row) => {
-    setSelected(row);
-  };
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader />
+      </div>
+    );
+  }
 
-  const handleClose = () => {
-    setSelected(null);
-  };
+  if (error) {
+    return <div className="p-6 text-center text-red-500">{error}</div>;
+  }
 
   return (
-    <div className="p-6 min-h-screen bg-purewhite text-[var(--color-text)]">
+    <div className="p-6 min-h-screen bg-[var(--color-background)] text-[var(--color-text)]">
       <h2 className="text-2xl font-semibold mb-4">Riwayat Transaksi</h2>
-
       <Table
         columns={columns}
-        data={transactions}
+        data={orders}
         renderActions={(row) => (
           <button
             onClick={() => handleDetail(row)}
@@ -75,23 +131,43 @@ const Order = () => {
         )}
       />
 
-      <Modal isOpen={!!selected} onClose={handleClose} title="Detail Pesanan">
-        {selected && (
-          <>
-            <Receipt data={selected} />
-            {selected.paymentProofUrl && (
-              <div className="mt-4 flex justify-end">
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title="Detail Pesanan">
+        {selectedOrder && (
+          <div className="space-y-4">
+            <p><strong>ID Pesanan:</strong> {selectedOrder.id}</p>
+            <p><strong>Nama Pembeli:</strong> {selectedOrder.user?.name || "Pengguna Tidak Terdaftar"}</p>
+            <p><strong>Alamat:</strong> {selectedOrder.user?.address || "Tidak ada"}</p>
+            <p><strong>No. Telepon:</strong> {selectedOrder.user?.phoneNumber || "Tidak ada"}</p>
+            <p><strong>Tanggal:</strong> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
+            <p><strong>Status:</strong> {selectedOrder.status}</p>
+            
+            <h4 className="font-semibold text-lg">Item Pesanan:</h4>
+            <ul className="list-disc list-inside">
+              {selectedOrder.orderItems.map((item) => (
+                <li key={item.id}>
+                  {item.product.name} ({item.quantity}x) - Rp {item.product.price.toLocaleString("id-ID")}
+                </li>
+              ))}
+            </ul>
+            
+            <div className="mt-4 font-bold text-lg">
+              Total: Rp {selectedOrder.total.toLocaleString("id-ID")}
+            </div>
+
+            {selectedOrder.paymentProofUrl && (
+              <div className="mt-4">
+                <h4 className="font-semibold">Bukti Pembayaran:</h4>
                 <a
-                  href={selected.paymentProofUrl}
+                  href={`http://localhost:5000/${selectedOrder.paymentProofUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition"
+                  className="text-blue-600 hover:underline"
                 >
                   Lihat Bukti Pembayaran
                 </a>
               </div>
             )}
-          </>
+          </div>
         )}
       </Modal>
     </div>

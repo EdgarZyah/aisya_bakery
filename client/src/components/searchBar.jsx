@@ -18,7 +18,7 @@ const SearchBar = ({ value, onChange, onSubmit }) => (
         focus:border-[var(--color-primary)]
         transition
       "
-      placeholder="Cari Produk..."
+      placeholder="Search ..."
     />
     <button
       type="submit"

@@ -19,15 +19,15 @@ const CartDropdown = ({ items, onRemoveItem, onCheckout, isOpen }) => {
   // Jika mobile dan dropdown ingin ditampilkan, redirect ke halaman checkout
   useEffect(() => {
     if (isMobile && isOpen) {
-      navigate("/checkout");
+      navigate("/checkout", { state: { cartItems: items } });
     }
-  }, [isMobile, isOpen, navigate]);
+  }, [isMobile, isOpen, navigate, items]);
 
   if (!isOpen || isMobile) return null;
 
+  // Perbaiki: Total dihitung langsung dari angka
   const total = items.reduce((sum, item) => {
-    const priceNum = Number(item.price.replace(/[^0-9]/g, "")) || 0;
-    return sum + priceNum * item.quantity;
+    return sum + item.price * item.quantity;
   }, 0);
 
   return (
@@ -47,7 +47,7 @@ const CartDropdown = ({ items, onRemoveItem, onCheckout, isOpen }) => {
                 <div>
                   <p className="text-sm font-semibold text-[var(--color-text)]">{item.name}</p>
                   <p className="text-xs text-[var(--color-primary)]">
-                    {item.quantity} × {item.price}
+                    {item.quantity} × Rp {item.price.toLocaleString("id-ID")}
                   </p>
                 </div>
               </div>
