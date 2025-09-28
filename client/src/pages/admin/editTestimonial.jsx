@@ -22,6 +22,7 @@ const EditTestimonial = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     const fetchTestimonial = async () => {
@@ -44,13 +45,26 @@ const EditTestimonial = () => {
         setModalTitle("Error");
         setModalMessage(`Error: ${error.message}`);
         setIsModalOpen(true);
-        setTimeout(() => navigate("/admin/testimonials"), 1500);
       } finally {
         setLoading(false);
       }
     };
     fetchTestimonial();
   }, [id, navigate]);
+
+  const validate = () => {
+    const err = {};
+    if (form.comment.length > CHARACTER_LIMIT) {
+      err.comment = `Komentar tidak boleh melebihi ${CHARACTER_LIMIT} karakter`;
+    }
+
+    if (form.avatar && !['image/jpeg', 'image/png'].includes(form.avatar.type)) {
+      err.avatar = "Hanya file JPG, JPEG, dan PNG yang diizinkan.";
+    }
+
+    setErrors(err);
+    return Object.keys(err).length === 0;
+  };
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -63,7 +77,7 @@ const EditTestimonial = () => {
 
   const handleModalClose = () => {
     setIsModalOpen(false);
-    if (modalTitle === "Berhasil") {
+    if (modalTitle === "Berhasil" || modalTitle === "Error") {
       navigate("/admin/testimonials");
     }
   };
@@ -72,10 +86,9 @@ const EditTestimonial = () => {
     e.preventDefault();
     const token = localStorage.getItem("token");
 
-    // Validasi di sisi client sebelum kirim ke backend
-    if (form.comment.length > CHARACTER_LIMIT) {
+    if (!validate()) {
       setModalTitle("Peringatan");
-      setModalMessage(`Komentar tidak boleh melebihi ${CHARACTER_LIMIT} karakter`);
+      setModalMessage("Mohon periksa kembali input Anda dan tipe file yang diunggah.");
       setIsModalOpen(true);
       return;
     }
@@ -119,8 +132,8 @@ const EditTestimonial = () => {
   }
 
   return (
-    <div className="p-6 bg-purewhite text-[var(--color-text)] min-h-screen">
-      <Card className="w-full mx-auto">
+    <div className="bg-background text-text min-h-screen">
+      <Card className="w-full mx-auto h-screen overflow-y-auto">
         <h2 className="text-2xl font-semibold mb-6">Edit Testimonial</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div>
@@ -149,12 +162,17 @@ const EditTestimonial = () => {
               onChange={handleChange}
               rows="4"
               maxLength={CHARACTER_LIMIT}
-              className="w-full p-3 border rounded"
+              className={`w-full p-3 border rounded ${
+                errors.comment ? "border-red-500" : ""
+              }`}
               required
             />
             <p className="text-right text-sm text-gray-500 mt-1">
               {form.comment.length}/{CHARACTER_LIMIT}
             </p>
+            {errors.comment && (
+              <p className="text-red-500 text-sm mt-1">{errors.comment}</p>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
@@ -167,9 +185,14 @@ const EditTestimonial = () => {
                 id="avatar"
                 name="avatar"
                 onChange={handleChange}
-                className="w-full p-3 border rounded"
-                accept="image/*"
+                className={`w-full p-3 border rounded ${
+                  errors.avatar ? "border-red-500" : ""
+                }`}
+                accept=".jpg,.jpeg,.png"
               />
+              {errors.avatar && (
+                <p className="text-red-500 text-sm mt-1">{errors.avatar}</p>
+              )}
             </div>
             {form.oldAvatar && (
               <div className="flex-shrink-0">
@@ -187,6 +210,7 @@ const EditTestimonial = () => {
           </Button>
         </form>
       </Card>
+      
       <Modal isOpen={isModalOpen} onClose={handleModalClose} title={modalTitle}>
         <p>{modalMessage}</p>
         <div className="mt-4 flex justify-end">

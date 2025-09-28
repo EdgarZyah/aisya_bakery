@@ -1,4 +1,3 @@
-// aisya_bakery/server/routes/productRoutes.js
 const express = require('express');
 const router = express.Router();
 const db = require('../models');
@@ -21,7 +20,25 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + path.extname(file.originalname));
   },
 });
-const upload = multer({ storage: storage });
+
+// Penambahan fileFilter untuk validasi ekstensi gambar
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = /jpeg|jpg|png/;
+  const mimetype = allowedTypes.test(file.mimetype);
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    cb('Error: Tipe file tidak valid. Hanya .jpg, .jpeg, dan .png yang diizinkan!');
+  }
+};
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter, // Menerapkan file filter
+  limits: { fileSize: 5 * 1024 * 1024 } // Batasan ukuran file 5MB
+});
 
 router.get('/', async (req, res) => {
   try {
@@ -111,10 +128,6 @@ router.put('/:id', auth, admin, upload.single('imageUrl'), async (req, res) => {
       name,
       description,
       price: parseFloat(price),
-      stock: parseInt(stock),
-      imageUrl: req.file ? req.file.path : product.imageUrl,
-      categoryId: parseInt(categoryId), // Perbaikan: Mengonversi ke integer
-      isFeatured: isFeatured === 'true', // Perbaikan: Mengonversi ke boolean
     };
 
     await product.update(updatedData);

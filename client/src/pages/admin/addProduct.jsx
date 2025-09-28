@@ -51,6 +51,12 @@ const AddProduct = () => {
     if (!form.stock || isNaN(form.stock) || form.stock < 0) err.stock = "Stok harus angka non-negatif";
     if (!form.categoryId) err.categoryId = "Kategori harus dipilih";
     if (!form.imageUrl) err.imageUrl = "Gambar produk harus diunggah";
+    
+    // Validasi tipe file
+    if (form.imageUrl && !['image/jpeg', 'image/png'].includes(form.imageUrl.type)) {
+      err.imageUrl = "Hanya file JPG, JPEG, dan PNG yang diizinkan.";
+    }
+
     setErrors(err);
     return Object.keys(err).length === 0;
   };
@@ -77,7 +83,7 @@ const AddProduct = () => {
     e.preventDefault();
     if (!validate()) {
       setModalTitle("Peringatan");
-      setModalMessage("Mohon lengkapi semua kolom yang wajib diisi.");
+      setModalMessage("Mohon lengkapi semua kolom yang wajib diisi dan periksa kembali tipe file.");
       setIsModalOpen(true);
       return;
     }
@@ -120,8 +126,8 @@ const AddProduct = () => {
   };
 
   return (
-    <div className="p-6 bg-[var(--color-background)] text-[var(--color-text)] min-h-screen">
-      <Card className="w-full mx-auto">
+    <div className="bg-background text-text min-h-screen">
+      <Card className="w-full mx-auto h-screen overflow-y-auto">
         <h2 className="text-2xl font-semibold mb-6">Tambah Produk Baru</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
@@ -256,6 +262,7 @@ const AddProduct = () => {
                 errors.imageUrl ? "border-red-500" : "border-gray-300"
               }`}
               required
+              accept=".jpg,.jpeg,.png"
             />
             {errors.imageUrl && (
               <p className="text-red-500 text-sm">{errors.imageUrl}</p>

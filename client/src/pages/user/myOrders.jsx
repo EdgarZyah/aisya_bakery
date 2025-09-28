@@ -5,6 +5,7 @@ import Loader from '../../components/common/loader';
 import Modal from '../../components/common/modal';
 import Button from '../../components/common/button';
 import Input from '../../components/common/input';
+import Pagination from '../../components/pagination';
 
 const MyOrdersPage = () => {
   const [orders, setOrders] = useState([]);
@@ -17,6 +18,8 @@ const MyOrdersPage = () => {
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
   const [messageTitle, setMessageTitle] = useState("");
   const [messageContent, setMessageContent] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -62,7 +65,19 @@ const MyOrdersPage = () => {
   };
   
   const handleFileChange = (e) => {
-    setPaymentProof(e.target.files[0]);
+    const file = e.target.files[0];
+    if (file) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+      if (!allowedTypes.includes(file.type)) {
+        setMessageTitle("Peringatan");
+        setMessageContent("Hanya file JPG, JPEG, PNG, dan PDF yang diizinkan.");
+        setIsMessageModalOpen(true);
+        setPaymentProof(null);
+        e.target.value = null; // Reset input file
+        return;
+      }
+    }
+    setPaymentProof(file);
   };
 
   const handleUploadPaymentProof = async () => {
@@ -87,7 +102,8 @@ const MyOrdersPage = () => {
       });
 
       if (!response.ok) {
-        throw new Error("Gagal mengunggah bukti pembayaran.");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Gagal mengunggah bukti pembayaran.");
       }
       setMessageTitle("Berhasil");
       setMessageContent("Bukti pembayaran berhasil diunggah!");
@@ -110,6 +126,12 @@ const MyOrdersPage = () => {
     { header: "Status", accessor: "status" },
   ];
 
+  const totalPages = Math.ceil(orders.length / itemsPerPage);
+  const paginatedData = orders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   if (loading) {
     return <div className="flex justify-center items-center h-screen"><Loader /></div>;
   }
@@ -125,18 +147,21 @@ const MyOrdersPage = () => {
         {orders.length === 0 ? (
           <p className="text-center">Anda belum memiliki pesanan.</p>
         ) : (
-          <Table
-            columns={columns}
-            data={orders}
-            renderActions={(row) => (
-              <button
-                onClick={() => handleOpenModal(row)}
-                className="px-4 py-2 bg-[var(--color-primary)] text-[var(--color-background)] rounded hover:bg-[var(--color-secondary)] transition"
-              >
-                Detail
-              </button>
-            )}
-          />
+          <>
+            <Table
+              columns={columns}
+              data={paginatedData}
+              renderActions={(row) => (
+                <button
+                  onClick={() => handleOpenModal(row)}
+                  className="px-4 py-2 bg-[var(--color-primary)] text-[var(--color-background)] rounded hover:bg-[var(--color-secondary)] transition"
+                >
+                  Detail
+                </button>
+              )}
+            />
+            <Pagination page={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
+          </>
         )}
       </Card>
 
@@ -160,7 +185,7 @@ const MyOrdersPage = () => {
                 <Input
                   type="file"
                   onChange={handleFileChange}
-                  accept="image/*"
+                  accept="image/*,.pdf"
                   label="Pilih file bukti pembayaran"
                 />
                 <Button onClick={handleUploadPaymentProof} disabled={uploading}>

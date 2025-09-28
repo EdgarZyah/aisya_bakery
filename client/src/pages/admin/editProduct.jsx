@@ -26,6 +26,7 @@ const EditProduct = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,13 +58,23 @@ const EditProduct = () => {
         setModalTitle("Error");
         setModalMessage(`Error: ${error.message}`);
         setIsModalOpen(true);
-        // Redirect will happen after modal is closed
       } finally {
         setLoading(false);
       }
     };
     fetchData();
   }, [id, navigate]);
+
+  const validate = () => {
+    const err = {};
+    // Validasi tipe file hanya jika file baru diunggah
+    if (form.imageUrl && !['image/jpeg', 'image/png'].includes(form.imageUrl.type)) {
+      err.imageUrl = "Hanya file JPG, JPEG, dan PNG yang diizinkan.";
+    }
+
+    setErrors(err);
+    return Object.keys(err).length === 0;
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
@@ -85,6 +96,13 @@ const EditProduct = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validate()) {
+      setModalTitle("Peringatan");
+      setModalMessage("Mohon periksa kembali tipe file yang diunggah.");
+      setIsModalOpen(true);
+      return;
+    }
+    
     setLoading(true);
     const token = localStorage.getItem("token");
     
@@ -132,8 +150,8 @@ const EditProduct = () => {
   }
 
   return (
-    <div className="p-6 bg-[var(--color-background)] text-[var(--color-text)] min-h-screen">
-      <Card className="w-full mx-auto">
+    <div className="bg-background text-text min-h-screen">
+      <Card className="w-full mx-auto h-screen overflow-y-auto">
         <h2 className="text-2xl font-semibold mb-6">Edit Produk</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
@@ -239,9 +257,14 @@ const EditProduct = () => {
               id="imageUrl"
               name="imageUrl"
               onChange={handleChange}
-              className="p-3 border rounded"
-              accept="image/*"
+              className={`p-3 border rounded ${
+                errors.imageUrl ? "border-red-500" : "border-gray-300"
+              }`}
+              accept=".jpg,.jpeg,.png"
             />
+            {errors.imageUrl && (
+              <p className="text-red-500 text-sm">{errors.imageUrl}</p>
+            )}
           </div>
           {form.oldImageUrl && (
             <div className="mb-4">

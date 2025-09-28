@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Button from "../../components/common/button";
 import { useNavigate } from "react-router-dom";
 import Card from "../../components/common/card";
-import Modal from "../../components/common/modal"; // Impor komponen Modal
+import Modal from "../../components/common/modal";
 
 const API_URL = "http://localhost:5000/api/testimonials";
 
@@ -26,6 +26,12 @@ const AddTestimonial = () => {
     if (!form.name.trim()) err.name = "Nama harus diisi";
     if (!form.comment.trim()) err.comment = "Pesan testimonial harus diisi";
     if (form.comment.length > CHARACTER_LIMIT) err.comment = `Komentar tidak boleh melebihi ${CHARACTER_LIMIT} karakter`;
+
+    // Validasi tipe file
+    if (form.avatar && !['image/jpeg', 'image/png'].includes(form.avatar.type)) {
+      err.avatar = "Hanya file JPG, JPEG, dan PNG yang diizinkan.";
+    }
+
     setErrors(err);
     return Object.keys(err).length === 0;
   };
@@ -44,7 +50,7 @@ const AddTestimonial = () => {
 
     if (!validate()) {
       setModalTitle("Peringatan");
-      setModalMessage("Mohon lengkapi semua kolom yang wajib diisi dan periksa kembali batas karakter.");
+      setModalMessage("Mohon lengkapi semua kolom yang wajib diisi dan periksa kembali tipe file.");
       setIsModalOpen(true);
       return;
     }
@@ -73,7 +79,7 @@ const AddTestimonial = () => {
       setModalTitle("Berhasil");
       setModalMessage("Testimonial berhasil ditambahkan!");
       setIsModalOpen(true);
-      setTimeout(() => navigate("/admin/testimonials"), 1500); // Redirect setelah modal ditutup
+      setTimeout(() => navigate("/admin/testimonials"), 1500);
     } catch (error) {
       setModalTitle("Error");
       setModalMessage(`Error: ${error.message}`);
@@ -82,8 +88,8 @@ const AddTestimonial = () => {
   };
 
   return (
-    <div className="p-6 bg-purewhite text-[var(--color-text)] min-h-screen">
-      <Card className="w-full mx-auto">
+    <div className="bg-background text-text min-h-screen">
+      <Card className="w-full mx-auto h-screen overflow-y-auto">
         <h2 className="text-2xl font-semibold mb-6">Tambah Testimonial Baru</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div>
@@ -141,13 +147,18 @@ const AddTestimonial = () => {
               id="avatar"
               name="avatar"
               onChange={handleChange}
-              className="w-full p-3 border rounded"
-              accept="image/*"
+              className={`w-full p-3 border rounded ${
+                errors.avatar ? "border-red-500" : ""
+              }`}
+              accept=".jpg,.jpeg,.png"
             />
+            {errors.avatar && (
+              <p className="text-red-500 text-sm mt-1">{errors.avatar}</p>
+            )}
           </div>
 
           <Button type="submit" variant="primary" className="mt-4">
-            Simpan Testimoni
+            Simpan Testimonial
           </Button>
         </form>
       </Card>

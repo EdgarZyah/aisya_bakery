@@ -42,7 +42,6 @@ router.post('/register', async (req, res) => {
       { expiresIn: '1h' },
       (err, token) => {
         if (err) throw err;
-        // Perbaikan: Tambahkan address dan phoneNumber ke objek user yang dikirim
         res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, address: user.address, phoneNumber: user.phoneNumber } });
       }
     );
@@ -81,7 +80,6 @@ router.post('/login', async (req, res) => {
       { expiresIn: '1h' },
       (err, token) => {
         if (err) throw err;
-        // Perbaikan: Tambahkan address dan phoneNumber ke objek user yang dikirim
         res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, address: user.address, phoneNumber: user.phoneNumber } });
       }
     );
@@ -91,7 +89,9 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Rute untuk mendapatkan semua pengguna (hanya admin)
+// @route   GET /api/auth/users
+// @desc    Get all users (Admin only)
+// @access  Private
 router.get('/users', auth, admin, async (req, res) => {
   try {
     const users = await User.findAll({
@@ -140,6 +140,56 @@ router.put('/users/:id', auth, async (req, res) => {
     }
     await user.update({ name, email, address, phoneNumber });
     res.json({ message: 'Profil berhasil diperbarui.', user });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// @route   PUT /api/auth/users/role/:id
+// @desc    Update user role (Admin only)
+// @access  Private (Admin)
+router.put('/users/role/:id', auth, admin, async (req, res) => {
+  const { role } = req.body;
+  if (!['user', 'admin'].includes(role)) {
+    return res.status(400).json({ message: 'Peran tidak valid.' });
+  }
+  try {
+    const user = await User.findByPk(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'Pengguna tidak ditemukan.' });
+    }
+    await user.update({ role });
+    res.json({ message: `Role pengguna ${user.name} berhasil diperbarui menjadi ${role}.` });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// @route   PUT /api/auth/users/:id/password
+// @desc    Update user's own password (Private)
+// @access  Private
+router.put('/users/:id/password', auth, async (req, res) => {
+  const { newPassword, confirmNewPassword } = req.body;
+  if (req.user.id !== parseInt(req.params.id)) {
+    return res.status(403).json({ message: 'Akses ditolak. Anda hanya bisa memperbarui password Anda sendiri.' });
+  }
+  if (newPassword !== confirmNewPassword) {
+    return res.status(400).json({ message: 'Password baru tidak cocok.' });
+  }
+  try {
+    const user = await User.findByPk(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'Pengguna tidak ditemukan.' });
+    }
+    
+    // Hash password baru dan simpan
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.json({ message: 'Password berhasil diperbarui.' });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ message: 'Server Error' });

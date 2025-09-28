@@ -4,6 +4,7 @@ import Loader from "../../components/common/loader";
 import SearchBar from "../../components/searchBar";
 import Button from "../../components/common/button";
 import Modal from "../../components/common/modal";
+import Pagination from "../../components/pagination";
 
 const API_URL = "http://localhost:5000/api/auth/users";
 
@@ -16,9 +17,16 @@ const ListUser = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEditRoleModalOpen, setIsEditRoleModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [userToUpdate, setUserToUpdate] = useState(null);
   const [newRole, setNewRole] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  const loggedInUser = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
     fetchUsers();
@@ -56,10 +64,14 @@ const ListUser = () => {
     }
   };
 
-  const handleEditRoleClick = (user) => {
+  const handleEditClick = (user) => {
     setUserToUpdate(user);
-    setNewRole(user.role);
-    setIsEditModalOpen(true);
+    if (loggedInUser.id === user.id) {
+      setIsPasswordModalOpen(true);
+    } else {
+      setNewRole(user.role);
+      setIsEditRoleModalOpen(true);
+    }
   };
 
   const handleUpdateRole = async () => {
@@ -77,13 +89,48 @@ const ListUser = () => {
         const errorData = await response.json();
         throw new Error(errorData.msg || "Gagal mengubah role pengguna.");
       }
-      setIsEditModalOpen(false);
+      setIsEditRoleModalOpen(false);
       setModalTitle("Berhasil");
       setModalMessage(`Role pengguna berhasil diubah menjadi ${newRole}.`);
       setIsModalOpen(true);
       fetchUsers();
     } catch (e) {
-      setIsEditModalOpen(false);
+      setIsEditRoleModalOpen(false);
+      setModalTitle("Error");
+      setModalMessage(`Error: ${e.message}`);
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (newPassword !== confirmNewPassword) {
+      setModalTitle("Peringatan");
+      setModalMessage("Password baru tidak cocok dengan konfirmasi password.");
+      setIsModalOpen(true);
+      return;
+    }
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${API_URL}/${userToUpdate.id}/password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-auth-token": token,
+        },
+        body: JSON.stringify({ newPassword, confirmNewPassword }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Gagal mengubah password.");
+      }
+      setIsPasswordModalOpen(false);
+      setModalTitle("Berhasil");
+      setModalMessage("Password berhasil diperbarui.");
+      setIsModalOpen(true);
+      // Reset form password
+      setNewPassword("");
+      setConfirmNewPassword("");
+    } catch (e) {
       setModalTitle("Error");
       setModalMessage(`Error: ${e.message}`);
       setIsModalOpen(true);
@@ -92,9 +139,10 @@ const ListUser = () => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setIsEditModalOpen(false);
+    setIsEditRoleModalOpen(false);
+    setIsPasswordModalOpen(false);
     setUserToUpdate(null);
-  }; // Filter dan Pencarian Data
+  };
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
@@ -112,6 +160,12 @@ const ListUser = () => {
     { header: "Alamat", accessor: "address" },
     { header: "No. Telepon", accessor: "phoneNumber" },
   ];
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedData = filteredUsers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   if (loading) {
     return (
@@ -139,7 +193,10 @@ const ListUser = () => {
           <select
             id="role-filter"
             value={filterRole}
-            onChange={(e) => setFilterRole(e.target.value)}
+            onChange={(e) => {
+              setFilterRole(e.target.value);
+              setCurrentPage(1);
+            }}
             className="p-2 border rounded h-10"
           >
             <option value="all">Semua</option>
@@ -150,18 +207,21 @@ const ListUser = () => {
       </div>
       <Table
         columns={columns}
-        data={filteredUsers}
+        data={paginatedData}
         renderActions={(row) => (
           <button
-            onClick={() => handleEditRoleClick(row)}
+            onClick={() => handleEditClick(row)}
             className="text-blue-600 hover:underline"
           >
             Edit
           </button>
         )}
       />
+      <Pagination page={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
+
+      {/* Modal Edit Role */}
       <Modal
-        isOpen={isEditModalOpen}
+        isOpen={isEditRoleModalOpen}
         onClose={handleCloseModal}
         title={`Edit Role untuk ${userToUpdate?.name}`}
       >
@@ -189,6 +249,40 @@ const ListUser = () => {
           </Button>
         </div>
       </Modal>
+      
+      {/* Modal Ganti Password */}
+      <Modal
+        isOpen={isPasswordModalOpen}
+        onClose={handleCloseModal}
+        title={`Ganti Password untuk ${userToUpdate?.name}`}
+      >
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="block text-sm font-medium">Password Baru</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="mt-1 block w-full p-2 border rounded"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">Konfirmasi Password Baru</label>
+            <input
+              type="password"
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              className="mt-1 block w-full p-2 border rounded"
+            />
+          </div>
+        </div>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline" onClick={handleCloseModal}>Batal</Button>
+          <Button variant="primary" onClick={handleUpdatePassword}>Simpan Password</Button>
+        </div>
+      </Modal>
+
+      {/* Modal Pesan (Berhasil/Error) */}
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={modalTitle}>
         <p>{modalMessage}</p>
         <div className="mt-4 flex justify-end">

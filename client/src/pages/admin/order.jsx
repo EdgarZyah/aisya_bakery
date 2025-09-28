@@ -4,6 +4,7 @@ import Modal from "../../components/common/modal";
 import Loader from "../../components/common/loader";
 import Button from "../../components/common/button";
 import { FaFileExcel } from 'react-icons/fa';
+import Pagination from "../../components/pagination";
 
 const API_URL = "http://localhost:5000/api/orders";
 
@@ -16,6 +17,8 @@ const Order = () => {
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
   const [messageTitle, setMessageTitle] = useState("");
   const [messageContent, setMessageContent] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -123,6 +126,12 @@ const Order = () => {
       ),
     },
   ];
+  
+  const totalPages = Math.ceil(orders.length / itemsPerPage);
+  const paginatedData = orders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   if (loading) {
     return (
@@ -148,7 +157,7 @@ const Order = () => {
       </div>
       <Table
         columns={columns}
-        data={orders}
+        data={paginatedData}
         renderActions={(row) => (
           <button
             onClick={() => handleDetail(row)}
@@ -158,7 +167,7 @@ const Order = () => {
           </button>
         )}
       />
-
+      <Pagination page={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} title="Detail Pesanan">
         {selectedOrder && (
           <div className="space-y-4">

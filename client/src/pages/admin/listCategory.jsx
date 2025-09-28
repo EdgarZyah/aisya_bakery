@@ -4,6 +4,7 @@ import Table from "../../components/common/table";
 import Loader from "../../components/common/loader";
 import Card from "../../components/common/card";
 import Modal from "../../components/common/modal";
+import Pagination from "../../components/pagination";
 
 const API_URL = "http://localhost:5000/api/categories";
 
@@ -18,6 +19,8 @@ const ListCategory = () => {
   const [modalMessage, setModalMessage] = useState("");
   const [isConfirmModal, setIsConfirmModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -121,6 +124,12 @@ const ListCategory = () => {
     { header: "ID", accessor: "id" },
     { header: "Nama Kategori", accessor: "name" },
   ];
+  
+  const totalPages = Math.ceil(categories.length / itemsPerPage);
+  const paginatedData = categories.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   if (loading) {
     return <div className="flex justify-center items-center h-screen"><Loader /></div>;
@@ -153,7 +162,7 @@ const ListCategory = () => {
 
       <Table
         columns={columns}
-        data={categories}
+        data={paginatedData}
         renderActions={(row) => (
           <button
             onClick={() => handleDeleteClick(row.id)}
@@ -163,6 +172,7 @@ const ListCategory = () => {
           </button>
         )}
       />
+      <Pagination page={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
       
       <Modal 
         isOpen={isModalOpen} 
@@ -174,10 +184,14 @@ const ListCategory = () => {
         title={modalTitle}
       >
         <p>{modalMessage}</p>
-        {isConfirmModal && (
+        {isConfirmModal ? (
           <div className="mt-4 flex justify-end gap-2">
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>Batal</Button>
             <Button variant="primary" onClick={handleConfirmDelete}>Hapus</Button>
+          </div>
+        ) : (
+          <div className="mt-4 flex justify-end">
+            <Button variant="primary" onClick={() => setIsModalOpen(false)}>OK</Button>
           </div>
         )}
       </Modal>

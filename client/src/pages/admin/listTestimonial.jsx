@@ -4,6 +4,7 @@ import Table from "../../components/common/table";
 import Button from "../../components/common/button";
 import Loader from "../../components/common/loader";
 import Modal from "../../components/common/modal";
+import Pagination from "../../components/pagination";
 
 const API_URL = "http://localhost:5000/api/testimonials";
 
@@ -16,6 +17,8 @@ const ListTestimonial = () => {
   const [modalMessage, setModalMessage] = useState("");
   const [isConfirmModal, setIsConfirmModal] = useState(false);
   const [testimonialToDelete, setTestimonialToDelete] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchTestimonials();
@@ -100,6 +103,12 @@ const ListTestimonial = () => {
     },
   ];
 
+  const totalPages = Math.ceil(testimonials.length / itemsPerPage);
+  const paginatedData = testimonials.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -122,7 +131,7 @@ const ListTestimonial = () => {
       </div>
       <Table
         columns={columns}
-        data={testimonials}
+        data={paginatedData}
         renderActions={(row) => (
           <>
             <Link
@@ -140,7 +149,7 @@ const ListTestimonial = () => {
           </>
         )}
       />
-
+      <Pagination page={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
       <Modal
         isOpen={isModalOpen}
         onClose={() => {
@@ -151,10 +160,14 @@ const ListTestimonial = () => {
         title={modalTitle}
       >
         <p>{modalMessage}</p>
-        {isConfirmModal && (
+        {isConfirmModal ? (
           <div className="mt-4 flex justify-end gap-2">
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>Batal</Button>
             <Button variant="primary" onClick={handleConfirmDelete}>Hapus</Button>
+          </div>
+        ) : (
+          <div className="mt-4 flex justify-end">
+            <Button variant="primary" onClick={() => setIsModalOpen(false)}>OK</Button>
           </div>
         )}
       </Modal>

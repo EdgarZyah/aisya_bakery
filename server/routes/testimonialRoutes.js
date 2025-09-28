@@ -8,7 +8,6 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Konfigurasi Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = 'uploads/testimonials';
@@ -19,9 +18,25 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + path.extname(file.originalname));
   }
 });
-const upload = multer({ storage: storage });
 
-// GET semua testimonial
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = /jpeg|jpg|png/;
+  const mimetype = allowedTypes.test(file.mimetype);
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    cb('Error: Tipe file tidak valid. Hanya .jpg, .jpeg, dan .png yang diizinkan!');
+  }
+};
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
+
 router.get('/', async (req, res) => {
   try {
     const testimonials = await Testimonial.findAll();
@@ -31,7 +46,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET testimonial berdasarkan ID
 router.get('/:id', async (req, res) => {
   try {
     const testimonial = await Testimonial.findByPk(req.params.id);
@@ -44,7 +58,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST testimonial baru (hanya admin)
 router.post('/', auth, admin, upload.single('avatar'), async (req, res) => {
   try {
     const { name, comment } = req.body;
@@ -61,7 +74,6 @@ router.post('/', auth, admin, upload.single('avatar'), async (req, res) => {
   }
 });
 
-// PUT testimonial untuk update (hanya admin)
 router.put('/:id', auth, admin, upload.single('avatar'), async (req, res) => {
   try {
     const { id } = req.params;
@@ -72,9 +84,7 @@ router.put('/:id', auth, admin, upload.single('avatar'), async (req, res) => {
       return res.status(404).json({ error: 'Testimonial tidak ditemukan' });
     }
 
-    // Jika ada file baru diupload, hapus file lama
     if (req.file && testimonial.avatar) {
-      // Perbaikan: Tambahkan pemeriksaan file exist
       if (fs.existsSync(testimonial.avatar)) {
         fs.unlinkSync(testimonial.avatar);
       }
@@ -93,14 +103,12 @@ router.put('/:id', auth, admin, upload.single('avatar'), async (req, res) => {
   }
 });
 
-// DELETE testimonial (hanya admin)
 router.delete('/:id', auth, admin, async (req, res) => {
   try {
     const testimonial = await Testimonial.findByPk(req.params.id);
     if (!testimonial) {
       return res.status(404).json({ error: 'Testimonial tidak ditemukan' });
     }
-    // Perbaikan: Tambahkan pemeriksaan file exist
     if (testimonial.avatar && fs.existsSync(testimonial.avatar)) {
       fs.unlinkSync(testimonial.avatar);
     }

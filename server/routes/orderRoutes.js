@@ -22,9 +22,25 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + path.extname(file.originalname));
   },
 });
-const upload = multer({ storage: storage });
 
-// Rute untuk proses checkout
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = /jpeg|jpg|png|pdf/;
+  const mimetype = allowedTypes.test(file.mimetype);
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    cb('Error: Tipe file tidak valid. Hanya .jpg, .jpeg, .png, dan .pdf yang diizinkan!');
+  }
+};
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
+
 router.post('/checkout', auth, async (req, res) => {
   const { items } = req.body;
   const userId = req.user.id;
@@ -78,7 +94,6 @@ router.post('/checkout', auth, async (req, res) => {
   }
 });
 
-// Rute GET untuk admin untuk melihat semua pesanan
 router.get('/', auth, admin, async (req, res) => {
   try {
     const orders = await Order.findAll({
@@ -107,7 +122,6 @@ router.get('/', auth, admin, async (req, res) => {
   }
 });
 
-// Rute untuk user mengunggah bukti pembayaran
 router.put('/upload-payment-proof/:id', auth, upload.single('paymentProof'), async (req, res) => {
   try {
     const order = await Order.findByPk(req.params.id);
@@ -129,7 +143,6 @@ router.put('/upload-payment-proof/:id', auth, upload.single('paymentProof'), asy
   }
 });
 
-// Rute untuk admin memperbarui status pesanan
 router.put('/:id/status', auth, admin, async (req, res) => {
   const { status } = req.body;
   const validStatuses = ['pending', 'processed', 'shipped', 'delivered', 'cancelled'];
@@ -150,7 +163,6 @@ router.put('/:id/status', auth, admin, async (req, res) => {
   }
 });
 
-// Rute untuk user mengambil pesanannya
 router.get('/user-orders', auth, async (req, res) => {
   try {
     const orders = await Order.findAll({
@@ -175,7 +187,6 @@ router.get('/user-orders', auth, async (req, res) => {
   }
 });
 
-// Rute ekspor ke Excel (Hanya Admin)
 router.get('/export/excel', auth, admin, async (req, res) => {
   try {
     const orders = await Order.findAll({
@@ -197,7 +208,6 @@ router.get('/export/excel', auth, admin, async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Ringkasan Transaksi');
 
-    // Menentukan kolom dan properti untuk AutoFilter dan AutoWidth
     worksheet.columns = [
       { header: 'ID Pesanan', key: 'id', width: 15 },
       { header: 'Nama Pembeli', key: 'buyerName', width: 25 },
@@ -209,12 +219,11 @@ router.get('/export/excel', auth, admin, async (req, res) => {
       { header: 'Tanggal', key: 'date', width: 20 }
     ];
 
-    // Menerapkan gaya header
     worksheet.getRow(1).eachCell((cell) => {
       cell.fill = {
         type: 'pattern',
         pattern: 'solid',
-        fgColor: { argb: 'FFB08968' }, // Warna primer
+        fgColor: { argb: 'FFB08968' },
       };
       cell.font = {
         color: { argb: 'FFFFFFFF' },
@@ -232,7 +241,6 @@ router.get('/export/excel', auth, admin, async (req, res) => {
       };
     });
 
-    // Menambahkan data
     let totalRevenue = 0;
     orders.forEach(order => {
       totalRevenue += order.total;
@@ -249,20 +257,17 @@ router.get('/export/excel', auth, admin, async (req, res) => {
       });
     });
 
-    // Menambahkan baris total pendapatan
     worksheet.addRow([]);
     const totalRow = worksheet.addRow({
       buyerName: 'Total Pendapatan:',
       total: totalRevenue
     });
     
-    // Menerapkan gaya pada baris total
     totalRow.getCell('B').font = { bold: true };
     totalRow.getCell('F').font = { bold: true };
     totalRow.getCell('F').numFmt = '"Rp"#,##0';
     totalRow.getCell('B').alignment = { horizontal: 'right' };
     
-    // Menerapkan filter
     worksheet.autoFilter = {
       from: 'A1',
       to: 'H1',
