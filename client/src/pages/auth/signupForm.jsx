@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Button from "../../components/common/button";
 import { Link, useNavigate } from "react-router-dom";
+import Modal from "../../components/common/modal";
 
 const Signup = () => {
   const [form, setForm] = useState({
@@ -11,14 +12,28 @@ const Signup = () => {
     address: "",
     phoneNumber: "",
   });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+  const [redirectTo, setRedirectTo] = useState(null);
+
   const navigate = useNavigate();
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    if (redirectTo) {
+      navigate(redirectTo);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (form.password !== form.confirmPassword) {
-      alert("Password dan konfirmasi password harus sama");
+      setModalTitle("Peringatan");
+      setModalMessage("Password dan konfirmasi password harus sama");
+      setIsModalOpen(true);
       return;
     }
 
@@ -29,20 +44,26 @@ const Signup = () => {
         body: JSON.stringify(form),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Registration failed");
+        throw new Error(data.message || "Registration failed");
       }
 
-      const data = await response.json();
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      alert(`Akun berhasil dibuat dengan email: ${form.email}`);
-      navigate("/user/dashboard"); // Arahkan ke dashboard pengguna
+      setModalTitle("Berhasil");
+      setModalMessage(`Akun berhasil dibuat dengan email: ${form.email}`);
+      setRedirectTo("/user/dashboard");
+      setIsModalOpen(true);
+      
     } catch (error) {
       console.error("Registration Error:", error.message);
-      alert(`Registrasi gagal: ${error.message}`);
+      setModalTitle("Registrasi Gagal");
+      setModalMessage(`Registrasi gagal: ${error.message}`);
+      setRedirectTo(null);
+      setIsModalOpen(true);
     }
   };
 
@@ -113,6 +134,12 @@ const Signup = () => {
           Masuk di sini
         </Link>
       </p>
+      <Modal isOpen={isModalOpen} onClose={handleModalClose} title={modalTitle}>
+        <p>{modalMessage}</p>
+        <div className="mt-4 flex justify-end">
+          <Button variant="primary" onClick={handleModalClose}>OK</Button>
+        </div>
+      </Modal>
     </div>
   );
 };

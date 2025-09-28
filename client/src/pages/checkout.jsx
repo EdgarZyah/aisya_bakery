@@ -4,11 +4,17 @@ import Card from "../components/common/card";
 import Button from "../components/common/button";
 import Loader from "../components/common/loader";
 import Receipt from "../components/receipt";
+import Modal from "../components/common/modal";
 
 const Checkout = ({ cartItems, onClearCart }) => {
   const [loading, setLoading] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderData, setOrderData] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+  const [redirectPath, setRedirectPath] = useState(null);
+
   const navigate = useNavigate();
 
   const total = cartItems.reduce(
@@ -16,12 +22,21 @@ const Checkout = ({ cartItems, onClearCart }) => {
     0
   );
 
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    if (redirectPath) {
+      navigate(redirectPath);
+    }
+  };
+
   const handleCheckout = async () => {
     setLoading(true);
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Anda harus login untuk melanjutkan checkout.");
-      navigate("/login");
+      setModalTitle("Peringatan");
+      setModalMessage("Anda harus login untuk melanjutkan checkout.");
+      setRedirectPath("/login");
+      setIsModalOpen(true);
       setLoading(false);
       return;
     }
@@ -53,13 +68,18 @@ const Checkout = ({ cartItems, onClearCart }) => {
       setOrderComplete(true);
       onClearCart();
       
-      // Clear cart items from localStorage as well if you're using it to persist the cart
       localStorage.removeItem("cartItems"); 
+      setModalTitle("Berhasil");
+      setModalMessage("Pesanan berhasil dibuat!");
+      setRedirectPath(null);
+      setIsModalOpen(true);
 
-      alert("Pesanan berhasil dibuat!");
     } catch (error) {
       console.error("Checkout Error:", error);
-      alert(error.message);
+      setModalTitle("Checkout Gagal");
+      setModalMessage(error.message);
+      setRedirectPath(null);
+      setIsModalOpen(true);
     } finally {
       setLoading(false);
     }
@@ -68,7 +88,7 @@ const Checkout = ({ cartItems, onClearCart }) => {
   if (orderComplete) {
     return (
       <div className="flex justify-center items-center min-h-screen p-6">
-        <Receipt orderData={orderData} />
+        <Receipt data={{ ...orderData, items: cartItems, subtotal: total, shippingCost: 0, paymentMethod: "Transfer Bank", buyerName: "User", shippingAddress: "Alamat Pengiriman", notes: ""}} />
       </div>
     );
   }
@@ -117,6 +137,12 @@ const Checkout = ({ cartItems, onClearCart }) => {
           </Button>
         </div>
       </Card>
+      <Modal isOpen={isModalOpen} onClose={handleModalClose} title={modalTitle}>
+        <p>{modalMessage}</p>
+        <div className="mt-4 flex justify-end">
+          <Button variant="primary" onClick={handleModalClose}>OK</Button>
+        </div>
+      </Modal>
     </div>
   );
 };

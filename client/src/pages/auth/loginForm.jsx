@@ -1,12 +1,25 @@
 import React, { useState } from "react";
 import Button from "../../components/common/button";
 import { Link, useNavigate } from "react-router-dom";
+import Modal from "../../components/common/modal";
 
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+  const [redirectTo, setRedirectTo] = useState("");
+
   const navigate = useNavigate();
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    if (redirectTo) {
+      navigate(redirectTo);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,20 +31,26 @@ const Login = () => {
         body: JSON.stringify(form),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Login failed");
+        throw new Error(data.message || "Login failed");
       }
 
-      const data = await response.json();
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      alert("Login berhasil!");
-      navigate(data.user.role === 'admin' ? "/admin/dashboard" : "/user/dashboard");
+      setModalTitle("Berhasil");
+      setModalMessage("Login berhasil!");
+      setRedirectTo(data.user.role === 'admin' ? "/admin/dashboard" : "/user/dashboard");
+      setIsModalOpen(true);
+
     } catch (error) {
       console.error("Login Error:", error.message);
-      alert(`Login gagal: ${error.message}`);
+      setModalTitle("Login Gagal");
+      setModalMessage(`Login gagal: ${error.message}`);
+      setRedirectTo(null);
+      setIsModalOpen(true);
     }
   };
 
@@ -69,6 +88,12 @@ const Login = () => {
           Daftar di sini
         </Link>
       </p>
+      <Modal isOpen={isModalOpen} onClose={handleModalClose} title={modalTitle}>
+        <p>{modalMessage}</p>
+        <div className="mt-4 flex justify-end">
+          <Button variant="primary" onClick={handleModalClose}>OK</Button>
+        </div>
+      </Modal>
     </div>
   );
 };

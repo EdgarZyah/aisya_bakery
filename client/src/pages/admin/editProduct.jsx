@@ -1,9 +1,9 @@
-// client/src/pages/admin/editProduct.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Button from "../../components/common/button";
 import Loader from "../../components/common/loader";
 import Card from "../../components/common/card";
+import Modal from "../../components/common/modal";
 
 const API_URL = "http://localhost:5000/api/products";
 const CATEGORY_API_URL = "http://localhost:5000/api/categories";
@@ -23,18 +23,19 @@ const EditProduct = () => {
     oldImageUrl: "",
   });
   const [categories, setCategories] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem("token");
       try {
-        // Fetch categories first
         const catResponse = await fetch(CATEGORY_API_URL);
         if (!catResponse.ok) throw new Error("Gagal memuat kategori.");
         const catData = await catResponse.json();
         setCategories(catData);
 
-        // Then fetch product
         const productResponse = await fetch(`${API_URL}/${id}`, {
           headers: { "x-auth-token": token },
         });
@@ -47,14 +48,16 @@ const EditProduct = () => {
           description: data.description,
           price: data.price,
           stock: data.stock,
-          categoryId: data.categoryId || "", // Perbaikan: Menggunakan categoryId dari data
+          categoryId: data.categoryId || "",
           isFeatured: data.isFeatured,
           imageUrl: null,
           oldImageUrl: data.imageUrl,
         });
       } catch (error) {
-        alert(`Error: ${error.message}`);
-        navigate("/admin/list-product"); // Perbaikan: rute yang benar
+        setModalTitle("Error");
+        setModalMessage(`Error: ${error.message}`);
+        setIsModalOpen(true);
+        // Redirect will happen after modal is closed
       } finally {
         setLoading(false);
       }
@@ -73,6 +76,13 @@ const EditProduct = () => {
     }
   };
 
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    if (modalTitle === "Berhasil" || modalTitle === "Error") {
+      navigate("/admin/list-product");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -83,8 +93,8 @@ const EditProduct = () => {
     formData.append("description", form.description);
     formData.append("price", form.price);
     formData.append("stock", form.stock);
-    formData.append("categoryId", form.categoryId); // Perbaikan: Mengirim categoryId
-    formData.append("isFeatured", String(form.isFeatured)); // Perbaikan: Mengubah boolean menjadi string
+    formData.append("categoryId", form.categoryId);
+    formData.append("isFeatured", String(form.isFeatured));
     if (form.imageUrl) {
       formData.append("imageUrl", form.imageUrl);
     }
@@ -101,10 +111,13 @@ const EditProduct = () => {
         const errorData = await response.json();
         throw new Error(errorData.msg || "Gagal memperbarui produk.");
       }
-      alert("Produk berhasil diperbarui!");
-      navigate("/admin/list-product"); // Perbaikan: rute yang benar
+      setModalTitle("Berhasil");
+      setModalMessage("Produk berhasil diperbarui!");
+      setIsModalOpen(true);
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      setModalTitle("Error");
+      setModalMessage(`Error: ${error.message}`);
+      setIsModalOpen(true);
     } finally {
       setLoading(false);
     }
@@ -246,6 +259,12 @@ const EditProduct = () => {
           </Button>
         </form>
       </Card>
+      <Modal isOpen={isModalOpen} onClose={handleModalClose} title={modalTitle}>
+        <p>{modalMessage}</p>
+        <div className="mt-4 flex justify-end">
+          <Button variant="primary" onClick={handleModalClose}>OK</Button>
+        </div>
+      </Modal>
     </div>
   );
 };

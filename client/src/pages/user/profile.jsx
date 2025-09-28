@@ -4,6 +4,7 @@ import Button from '../../components/common/button';
 import Loader from '../../components/common/loader';
 import Input from '../../components/common/input';
 import { useNavigate } from 'react-router-dom';
+import Modal from '../../components/common/modal';
 
 const UserProfilePage = () => {
   const [user, setUser] = useState({});
@@ -11,6 +12,10 @@ const UserProfilePage = () => {
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,6 +41,9 @@ const UserProfilePage = () => {
         setForm(data);
       } catch (err) {
         setError(err.message);
+        setModalTitle("Error");
+        setModalMessage(`Error: ${err.message}`);
+        setIsModalOpen(true);
       } finally {
         setLoading(false);
       }
@@ -66,9 +74,13 @@ const UserProfilePage = () => {
       const data = await response.json();
       setUser(data.user);
       setIsEditing(false);
-      alert('Profil berhasil diperbarui!');
+      setModalTitle("Berhasil");
+      setModalMessage('Profil berhasil diperbarui!');
+      setIsModalOpen(true);
     } catch (err) {
-      alert(`Error: ${err.message}`);
+      setModalTitle("Error");
+      setModalMessage(`Error: ${err.message}`);
+      setIsModalOpen(true);
     }
   };
 
@@ -105,6 +117,12 @@ const UserProfilePage = () => {
           </form>
         )}
       </Card>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle}>
+        <p>{modalMessage}</p>
+        <div className="mt-4 flex justify-end">
+          <Button variant="primary" onClick={() => setIsModalOpen(false)}>OK</Button>
+        </div>
+      </Modal>
     </div>
   );
 };

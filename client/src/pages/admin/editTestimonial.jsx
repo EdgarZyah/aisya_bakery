@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Button from "../../components/common/button";
 import Loader from "../../components/common/loader";
 import Card from "../../components/common/card";
+import Modal from "../../components/common/modal";
 
 const API_URL = "http://localhost:5000/api/testimonials";
 
@@ -18,6 +19,9 @@ const EditTestimonial = () => {
     avatar: null,
     oldAvatar: "",
   });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   useEffect(() => {
     const fetchTestimonial = async () => {
@@ -37,8 +41,10 @@ const EditTestimonial = () => {
           oldAvatar: data.avatar,
         });
       } catch (error) {
-        alert(`Error: ${error.message}`);
-        navigate("/admin/testimonials");
+        setModalTitle("Error");
+        setModalMessage(`Error: ${error.message}`);
+        setIsModalOpen(true);
+        setTimeout(() => navigate("/admin/testimonials"), 1500);
       } finally {
         setLoading(false);
       }
@@ -55,20 +61,30 @@ const EditTestimonial = () => {
     }
   };
 
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    if (modalTitle === "Berhasil") {
+      navigate("/admin/testimonials");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
+
+    // Validasi di sisi client sebelum kirim ke backend
+    if (form.comment.length > CHARACTER_LIMIT) {
+      setModalTitle("Peringatan");
+      setModalMessage(`Komentar tidak boleh melebihi ${CHARACTER_LIMIT} karakter`);
+      setIsModalOpen(true);
+      return;
+    }
 
     const formData = new FormData();
     formData.append("name", form.name);
     formData.append("comment", form.comment);
     if (form.avatar) {
       formData.append("avatar", form.avatar);
-    }
-    // Validasi di sisi client sebelum kirim ke backend
-    if (form.comment.length > CHARACTER_LIMIT) {
-      alert(`Komentar tidak boleh melebihi ${CHARACTER_LIMIT} karakter`);
-      return;
     }
 
     try {
@@ -84,10 +100,13 @@ const EditTestimonial = () => {
         const errorData = await response.json();
         throw new Error(errorData.msg || "Gagal memperbarui testimonial.");
       }
-      alert("Testimonial berhasil diperbarui!");
-      navigate("/admin/testimonials");
+      setModalTitle("Berhasil");
+      setModalMessage("Testimonial berhasil diperbarui!");
+      setIsModalOpen(true);
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      setModalTitle("Error");
+      setModalMessage(`Error: ${error.message}`);
+      setIsModalOpen(true);
     }
   };
 
@@ -168,6 +187,12 @@ const EditTestimonial = () => {
           </Button>
         </form>
       </Card>
+      <Modal isOpen={isModalOpen} onClose={handleModalClose} title={modalTitle}>
+        <p>{modalMessage}</p>
+        <div className="mt-4 flex justify-end">
+          <Button variant="primary" onClick={handleModalClose}>OK</Button>
+        </div>
+      </Modal>
     </div>
   );
 };

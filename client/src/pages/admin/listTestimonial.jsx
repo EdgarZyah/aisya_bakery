@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Table from "../../components/common/table";
 import Button from "../../components/common/button";
 import Loader from "../../components/common/loader";
+import Modal from "../../components/common/modal";
 
 const API_URL = "http://localhost:5000/api/testimonials";
 
@@ -10,6 +11,11 @@ const ListTestimonial = () => {
   const [testimonials, setTestimonials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+  const [isConfirmModal, setIsConfirmModal] = useState(false);
+  const [testimonialToDelete, setTestimonialToDelete] = useState(null);
 
   useEffect(() => {
     fetchTestimonials();
@@ -32,30 +38,45 @@ const ListTestimonial = () => {
       setTestimonials(data);
     } catch (e) {
       setError(e.message);
+      setModalTitle("Error");
+      setModalMessage(e.message);
+      setIsModalOpen(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Yakin ingin menghapus testimonial ini?")) {
-      const token = localStorage.getItem("token");
-      try {
-        const response = await fetch(`${API_URL}/${id}`, {
-          method: "DELETE",
-          headers: {
-            "x-auth-token": token,
-          },
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.msg || "Gagal menghapus testimonial.");
-        }
-        alert("Testimonial berhasil dihapus!");
-        fetchTestimonials();
-      } catch (e) {
-        alert(`Error: ${e.message}`);
+  const handleDeleteClick = (id) => {
+    setTestimonialToDelete(id);
+    setModalTitle("Konfirmasi Hapus");
+    setModalMessage("Yakin ingin menghapus testimonial ini?");
+    setIsConfirmModal(true);
+    setIsModalOpen(true);
+  };
+  
+  const handleConfirmDelete = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${API_URL}/${testimonialToDelete}`, {
+        method: "DELETE",
+        headers: {
+          "x-auth-token": token,
+        },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.msg || "Gagal menghapus testimonial.");
       }
+      setModalTitle("Berhasil");
+      setModalMessage("Testimonial berhasil dihapus!");
+      fetchTestimonials();
+    } catch (e) {
+      setModalTitle("Error");
+      setModalMessage(`Error: ${e.message}`);
+    } finally {
+      setIsModalOpen(false);
+      setIsConfirmModal(false);
+      setTestimonialToDelete(null);
     }
   };
 
@@ -111,7 +132,7 @@ const ListTestimonial = () => {
               Edit
             </Link>
             <button
-              onClick={() => handleDelete(row.id)}
+              onClick={() => handleDeleteClick(row.id)}
               className="text-red-600 hover:underline"
             >
               Hapus
@@ -119,6 +140,24 @@ const ListTestimonial = () => {
           </>
         )}
       />
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setIsConfirmModal(false);
+          setTestimonialToDelete(null);
+        }}
+        title={modalTitle}
+      >
+        <p>{modalMessage}</p>
+        {isConfirmModal && (
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>Batal</Button>
+            <Button variant="primary" onClick={handleConfirmDelete}>Hapus</Button>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

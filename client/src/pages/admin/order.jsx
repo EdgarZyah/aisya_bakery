@@ -13,6 +13,9 @@ const Order = () => {
   const [error, setError] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [messageTitle, setMessageTitle] = useState("");
+  const [messageContent, setMessageContent] = useState("");
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -29,6 +32,9 @@ const Order = () => {
     } catch (e) {
       console.error(e);
       setError(e.message);
+      setMessageTitle("Error");
+      setMessageContent(e.message);
+      setIsMessageModalOpen(true);
     } finally {
       setLoading(false);
     }
@@ -46,6 +52,12 @@ const Order = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedOrder(null);
+  };
+  
+  const handleCloseMessageModal = () => {
+    setIsMessageModalOpen(false);
+    setMessageTitle("");
+    setMessageContent("");
   };
 
   const handleStatusChange = async (orderId, newStatus) => {
@@ -65,9 +77,13 @@ const Order = () => {
       setOrders(orders.map(order =>
         order.id === orderId ? { ...order, status: newStatus } : order
       ));
-      alert("Status pesanan berhasil diperbarui!");
+      setMessageTitle("Berhasil");
+      setMessageContent("Status pesanan berhasil diperbarui!");
+      setIsMessageModalOpen(true);
     } catch (e) {
-      alert(`Error: ${e.message}`);
+      setMessageTitle("Error");
+      setMessageContent(`Error: ${e.message}`);
+      setIsMessageModalOpen(true);
     }
   };
 
@@ -181,6 +197,13 @@ const Order = () => {
             )}
           </div>
         )}
+      </Modal>
+      
+      <Modal isOpen={isMessageModalOpen} onClose={handleCloseMessageModal} title={messageTitle}>
+        <p>{messageContent}</p>
+        <div className="mt-4 flex justify-end">
+          <Button variant="primary" onClick={handleCloseMessageModal}>OK</Button>
+        </div>
       </Modal>
     </div>
   );

@@ -1,9 +1,9 @@
-// aisya_bakery/client/src/pages/admin/listProduct.jsx
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Table from "../../components/common/table";
 import Button from "../../components/common/button";
 import Loader from "../../components/common/loader";
+import Modal from "../../components/common/modal";
 
 const API_URL = "http://localhost:5000/api/products";
 
@@ -11,6 +11,11 @@ const ListProduct = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+  const [isConfirmModal, setIsConfirmModal] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
 
   useEffect(() => {
     fetchProducts();
@@ -20,7 +25,6 @@ const ListProduct = () => {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      // Permintaan sekarang menyertakan data kategori
       const response = await fetch(API_URL, {
         headers: {
           "x-auth-token": token,
@@ -34,30 +38,45 @@ const ListProduct = () => {
     } catch (e) {
       console.error("Failed to fetch products:", e);
       setError("Gagal memuat data produk.");
+      setModalTitle("Error");
+      setModalMessage("Gagal memuat data produk.");
+      setIsModalOpen(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Yakin ingin menghapus produk ini?")) {
-      const token = localStorage.getItem("token");
-      try {
-        const response = await fetch(`${API_URL}/${id}`, {
-          method: "DELETE",
-          headers: {
-            "x-auth-token": token,
-          },
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.msg || "Gagal menghapus produk.");
-        }
-        alert("Produk berhasil dihapus!");
-        fetchProducts();
-      } catch (e) {
-        alert(`Error: ${e.message}`);
+  const handleDeleteClick = (id) => {
+    setProductToDelete(id);
+    setModalTitle("Konfirmasi Hapus");
+    setModalMessage("Yakin ingin menghapus produk ini?");
+    setIsConfirmModal(true);
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${API_URL}/${productToDelete}`, {
+        method: "DELETE",
+        headers: {
+          "x-auth-token": token,
+        },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.msg || "Gagal menghapus produk.");
       }
+      setModalTitle("Berhasil");
+      setModalMessage("Produk berhasil dihapus!");
+      fetchProducts();
+    } catch (e) {
+      setModalTitle("Error");
+      setModalMessage(`Error: ${e.message}`);
+    } finally {
+      setIsModalOpen(false);
+      setIsConfirmModal(false);
+      setProductToDelete(null);
     }
   };
 
@@ -105,7 +124,7 @@ const ListProduct = () => {
               Edit
             </Link>
             <button
-              onClick={() => handleDelete(row.id)}
+              onClick={() => handleDeleteClick(row.id)}
               className="text-red-600 hover:underline"
             >
               Hapus
@@ -113,6 +132,24 @@ const ListProduct = () => {
           </>
         )}
       />
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setIsConfirmModal(false);
+          setProductToDelete(null);
+        }}
+        title={modalTitle}
+      >
+        <p>{modalMessage}</p>
+        {isConfirmModal && (
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>Batal</Button>
+            <Button variant="primary" onClick={handleConfirmDelete}>Hapus</Button>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

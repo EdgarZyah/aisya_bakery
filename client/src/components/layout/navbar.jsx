@@ -3,11 +3,17 @@ import { Link, useNavigate } from "react-router-dom";
 import { FiShoppingCart, FiMenu, FiX, FiLogOut } from "react-icons/fi";
 import CartDropdown from "../cartDropdown";
 import Logo from "../../assets/logo.png";
+import Modal from "../common/modal";
+import Button from "../common/button";
 
 const Navbar = ({ cartItems, onRemoveItem }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+  const [isConfirmLogoutOpen, setIsConfirmLogoutOpen] = useState(false);
 
   const cartRef = useRef(null);
   const navigate = useNavigate();
@@ -33,13 +39,29 @@ const Navbar = ({ cartItems, onRemoveItem }) => {
     navigate("/checkout", { state: { cartItems } });
     setCartOpen(false);
   };
+  
+  const handleLogoutClick = () => {
+    setModalTitle("Konfirmasi Logout");
+    setModalMessage("Apakah Anda yakin ingin logout?");
+    setIsConfirmLogoutOpen(true);
+    setIsModalOpen(true);
+  };
 
-  const handleLogout = () => {
+  const handleConfirmLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
-    navigate("/");
-    alert("Anda telah logout.");
+    setIsConfirmLogoutOpen(false);
+    setModalTitle("Informasi");
+    setModalMessage("Anda telah logout.");
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    if (!isConfirmLogoutOpen) { // Only navigate after the success message modal closes
+      navigate("/");
+    }
   };
 
   return (
@@ -109,7 +131,7 @@ const Navbar = ({ cartItems, onRemoveItem }) => {
               />
             </div>
             {user ? (
-              <button onClick={handleLogout} aria-label="Logout" className="p-2 rounded hover:bg-red-500 hover:text-white transition">
+              <button onClick={handleLogoutClick} aria-label="Logout" className="p-2 rounded hover:bg-red-500 hover:text-white transition">
                 <FiLogOut className="h-6 w-6 text-[var(--color-primary)]" />
               </button>
             ) : (
@@ -173,7 +195,10 @@ const Navbar = ({ cartItems, onRemoveItem }) => {
           )}
           {user ? (
             <button
-              onClick={handleLogout}
+              onClick={() => {
+                handleLogoutClick();
+                setMenuOpen(false);
+              }}
               className="w-full text-left px-4 py-2 text-base font-medium hover:bg-red-500 hover:text-white transition"
             >
               Logout
@@ -189,6 +214,20 @@ const Navbar = ({ cartItems, onRemoveItem }) => {
           )}
         </div>
       )}
+      
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle}>
+        <p>{modalMessage}</p>
+        {isConfirmLogoutOpen ? (
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>Batal</Button>
+            <Button variant="primary" onClick={handleConfirmLogout}>Logout</Button>
+          </div>
+        ) : (
+          <div className="mt-4 flex justify-end">
+            <Button variant="primary" onClick={handleModalClose}>OK</Button>
+          </div>
+        )}
+      </Modal>
     </nav>
   );
 };

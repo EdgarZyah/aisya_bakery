@@ -1,9 +1,9 @@
-// aisya_bakery/client/src/pages/admin/addProduct.jsx
 import React, { useState, useEffect } from "react";
 import Button from "../../components/common/button";
 import { useNavigate } from "react-router-dom";
 import Card from "../../components/common/card";
 import Loader from "../../components/common/loader";
+import Modal from "../../components/common/modal";
 
 const API_URL = "http://localhost:5000/api/products";
 const CATEGORY_API_URL = "http://localhost:5000/api/categories";
@@ -22,6 +22,9 @@ const AddProduct = () => {
   });
   const [categories, setCategories] = useState([]);
   const [errors, setErrors] = useState({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -32,6 +35,9 @@ const AddProduct = () => {
         setCategories(data);
       } catch (e) {
         console.error("Fetch categories error:", e);
+        setModalTitle("Error");
+        setModalMessage("Gagal mengambil data kategori.");
+        setIsModalOpen(true);
       }
     };
     fetchCategories();
@@ -60,9 +66,21 @@ const AddProduct = () => {
     }
   };
 
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    if (modalTitle === "Berhasil") {
+      navigate("/admin/list-product");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (!validate()) {
+      setModalTitle("Peringatan");
+      setModalMessage("Mohon lengkapi semua kolom yang wajib diisi.");
+      setIsModalOpen(true);
+      return;
+    }
     
     setLoading(true);
     const token = localStorage.getItem("token");
@@ -72,8 +90,8 @@ const AddProduct = () => {
     formData.append("description", form.description);
     formData.append("price", form.price);
     formData.append("stock", form.stock);
-    formData.append("categoryId", form.categoryId); // Perbaikan: Mengirim categoryId
-    formData.append("isFeatured", String(form.isFeatured)); // Perbaikan: Mengubah boolean menjadi string
+    formData.append("categoryId", form.categoryId);
+    formData.append("isFeatured", String(form.isFeatured));
     formData.append("imageUrl", form.imageUrl);
     
     try {
@@ -89,10 +107,13 @@ const AddProduct = () => {
         const errorData = await response.json();
         throw new Error(errorData.msg || "Gagal menambahkan produk.");
       }
-      alert("Produk berhasil ditambahkan!");
-      navigate("/admin/list-product"); // Perbaikan: Rute yang benar
+      setModalTitle("Berhasil");
+      setModalMessage("Produk berhasil ditambahkan!");
+      setIsModalOpen(true);
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      setModalTitle("Error");
+      setModalMessage(`Error: ${error.message}`);
+      setIsModalOpen(true);
     } finally {
       setLoading(false);
     }
@@ -246,6 +267,13 @@ const AddProduct = () => {
           </Button>
         </form>
       </Card>
+      
+      <Modal isOpen={isModalOpen} onClose={handleModalClose} title={modalTitle}>
+        <p>{modalMessage}</p>
+        <div className="mt-4 flex justify-end">
+          <Button variant="primary" onClick={handleModalClose}>OK</Button>
+        </div>
+      </Modal>
     </div>
   );
 };

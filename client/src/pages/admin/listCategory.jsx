@@ -3,6 +3,7 @@ import Button from "../../components/common/button";
 import Table from "../../components/common/table";
 import Loader from "../../components/common/loader";
 import Card from "../../components/common/card";
+import Modal from "../../components/common/modal";
 
 const API_URL = "http://localhost:5000/api/categories";
 
@@ -12,6 +13,11 @@ const ListCategory = () => {
   const [error, setError] = useState(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+  const [isConfirmModal, setIsConfirmModal] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -24,6 +30,9 @@ const ListCategory = () => {
       setCategories(data);
     } catch (e) {
       setError(e.message);
+      setModalTitle("Error");
+      setModalMessage(e.message);
+      setIsModalOpen(true);
     } finally {
       setLoading(false);
     }
@@ -38,7 +47,9 @@ const ListCategory = () => {
     setSubmitting(true);
     const token = localStorage.getItem("token");
     if (!newCategoryName.trim()) {
-      alert("Nama kategori tidak boleh kosong.");
+      setModalTitle("Peringatan");
+      setModalMessage("Nama kategori tidak boleh kosong.");
+      setIsModalOpen(true);
       setSubmitting(false);
       return;
     }
@@ -60,31 +71,49 @@ const ListCategory = () => {
 
       setNewCategoryName("");
       fetchCategories();
+      setModalTitle("Berhasil");
+      setModalMessage("Kategori berhasil ditambahkan.");
+      setIsModalOpen(true);
     } catch (e) {
-      alert(`Error: ${e.message}`);
+      setModalTitle("Error");
+      setModalMessage(`Error: ${e.message}`);
+      setIsModalOpen(true);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDeleteCategory = async (id) => {
-    if (window.confirm("Yakin ingin menghapus kategori ini? Produk yang terkait akan menjadi 'Uncategorized'.")) {
-      const token = localStorage.getItem("token");
-      try {
-        const response = await fetch(`${API_URL}/${id}`, {
-          method: "DELETE",
-          headers: { "x-auth-token": token },
-        });
+  const handleDeleteClick = (id) => {
+    setCategoryToDelete(id);
+    setModalTitle("Konfirmasi Hapus");
+    setModalMessage("Yakin ingin menghapus kategori ini? Produk yang terkait akan menjadi 'Uncategorized'.");
+    setIsConfirmModal(true);
+    setIsModalOpen(true);
+  };
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.msg || "Gagal menghapus kategori.");
-        }
+  const handleConfirmDelete = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${API_URL}/${categoryToDelete}`, {
+        method: "DELETE",
+        headers: { "x-auth-token": token },
+      });
 
-        fetchCategories();
-      } catch (e) {
-        alert(`Error: ${e.message}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.msg || "Gagal menghapus kategori.");
       }
+
+      fetchCategories();
+      setModalTitle("Berhasil");
+      setModalMessage("Kategori berhasil dihapus!");
+    } catch (e) {
+      setModalTitle("Error");
+      setModalMessage(`Error: ${e.message}`);
+    } finally {
+      setIsModalOpen(false);
+      setIsConfirmModal(false);
+      setCategoryToDelete(null);
     }
   };
 
@@ -127,13 +156,31 @@ const ListCategory = () => {
         data={categories}
         renderActions={(row) => (
           <button
-            onClick={() => handleDeleteCategory(row.id)}
+            onClick={() => handleDeleteClick(row.id)}
             className="text-red-600 hover:underline"
           >
             Hapus
           </button>
         )}
       />
+      
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => {
+          setIsModalOpen(false);
+          setIsConfirmModal(false);
+          setCategoryToDelete(null);
+        }} 
+        title={modalTitle}
+      >
+        <p>{modalMessage}</p>
+        {isConfirmModal && (
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>Batal</Button>
+            <Button variant="primary" onClick={handleConfirmDelete}>Hapus</Button>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

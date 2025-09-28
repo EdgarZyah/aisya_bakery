@@ -2,17 +2,39 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FiMenu, FiX, FiLogOut } from "react-icons/fi";
 import Logo from "../../assets/logo.png";
+import Modal from "../common/modal";
+import Button from "../common/button";
 
 const Sidebar = ({ menu }) => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-
-  const handleLogout = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+  const [isConfirmLogoutOpen, setIsConfirmLogoutOpen] = useState(false);
+  
+  const handleLogoutClick = () => {
+    setModalTitle("Konfirmasi Logout");
+    setModalMessage("Apakah Anda yakin ingin logout?");
+    setIsConfirmLogoutOpen(true);
+    setIsModalOpen(true);
+  };
+  
+  const handleConfirmLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    navigate("/login");
-    alert("Anda telah logout.");
+    setIsConfirmLogoutOpen(false);
+    setModalTitle("Informasi");
+    setModalMessage("Anda telah logout.");
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    if (!isConfirmLogoutOpen) { // Only navigate after the success message modal closes
+      navigate("/login");
+    }
   };
 
   return (
@@ -46,10 +68,13 @@ const Sidebar = ({ menu }) => {
         </nav>
         <div className="mt-auto">
           <button
-            onClick={handleLogout}
+            onClick={handleLogoutClick}
             className="w-full block px-3 py-2 rounded hover:bg-red-500 hover:text-white text-sm text-center transition"
           >
-            Logout
+            <div className="flex items-center space-x-2">
+              <FiLogOut />
+              <span>Logout</span>
+            </div>
           </button>
         </div>
       </aside>
@@ -82,7 +107,7 @@ const Sidebar = ({ menu }) => {
             ))}
             <button
               onClick={() => {
-                handleLogout();
+                handleLogoutClick();
                 setOpen(false);
               }}
               className="px-3 py-3 rounded hover:bg-red-500 hover:text-white text-sm text-center"
@@ -92,6 +117,20 @@ const Sidebar = ({ menu }) => {
           </nav>
         </div>
       )}
+
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle}>
+        <p>{modalMessage}</p>
+        {isConfirmLogoutOpen ? (
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>Batal</Button>
+            <Button variant="primary" onClick={handleConfirmLogout}>Logout</Button>
+          </div>
+        ) : (
+          <div className="mt-4 flex justify-end">
+            <Button variant="primary" onClick={handleModalClose}>OK</Button>
+          </div>
+        )}
+      </Modal>
     </>
   );
 };

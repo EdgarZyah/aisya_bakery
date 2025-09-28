@@ -14,6 +14,9 @@ const MyOrdersPage = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [paymentProof, setPaymentProof] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [messageTitle, setMessageTitle] = useState("");
+  const [messageContent, setMessageContent] = useState("");
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -29,6 +32,9 @@ const MyOrdersPage = () => {
       setOrders(data);
     } catch (err) {
       setError(err.message);
+      setMessageTitle("Error");
+      setMessageContent(`Error: ${err.message}`);
+      setIsMessageModalOpen(true);
     } finally {
       setLoading(false);
     }
@@ -49,13 +55,21 @@ const MyOrdersPage = () => {
     setPaymentProof(null);
   };
   
+  const handleCloseMessageModal = () => {
+    setIsMessageModalOpen(false);
+    setMessageTitle("");
+    setMessageContent("");
+  };
+  
   const handleFileChange = (e) => {
     setPaymentProof(e.target.files[0]);
   };
 
   const handleUploadPaymentProof = async () => {
     if (!paymentProof) {
-      alert("Pilih file terlebih dahulu.");
+      setMessageTitle("Peringatan");
+      setMessageContent("Pilih file terlebih dahulu.");
+      setIsMessageModalOpen(true);
       return;
     }
     setUploading(true);
@@ -75,11 +89,15 @@ const MyOrdersPage = () => {
       if (!response.ok) {
         throw new Error("Gagal mengunggah bukti pembayaran.");
       }
-      alert("Bukti pembayaran berhasil diunggah!");
+      setMessageTitle("Berhasil");
+      setMessageContent("Bukti pembayaran berhasil diunggah!");
+      setIsMessageModalOpen(true);
       handleCloseModal();
       fetchOrders();
     } catch (e) {
-      alert(`Error: ${e.message}`);
+      setMessageTitle("Error");
+      setMessageContent(`Error: ${e.message}`);
+      setIsMessageModalOpen(true);
     } finally {
       setUploading(false);
     }
@@ -166,6 +184,13 @@ const MyOrdersPage = () => {
             )}
           </div>
         )}
+      </Modal>
+      
+      <Modal isOpen={isMessageModalOpen} onClose={handleCloseMessageModal} title={messageTitle}>
+        <p>{messageContent}</p>
+        <div className="mt-4 flex justify-end">
+          <Button variant="primary" onClick={handleCloseMessageModal}>OK</Button>
+        </div>
       </Modal>
     </div>
   );

@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import Button from "../components/common/button";
 import Loader from "../components/common/loader";
 import NotFoundPage from "./notFound";
+import Modal from "../components/common/modal";
 
 const API_URL = "http://localhost:5000/api/products";
 
@@ -12,6 +13,9 @@ const ProductPage = ({ onAddToCart }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -42,7 +46,9 @@ const ProductPage = ({ onAddToCart }) => {
         quantity: quantity,
       };
       onAddToCart(itemToAdd);
-      alert(`${itemToAdd.name} (${itemToAdd.quantity}) berhasil ditambahkan ke keranjang.`);
+      setModalTitle("Berhasil Ditambahkan");
+      setModalMessage(`${itemToAdd.name} (${itemToAdd.quantity}) berhasil ditambahkan ke keranjang.`);
+      setIsModalOpen(true);
     }
   };
 
@@ -91,6 +97,12 @@ const ProductPage = ({ onAddToCart }) => {
           Tambah ke Keranjang
         </Button>
       </div>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle}>
+        <p>{modalMessage}</p>
+        <div className="mt-4 flex justify-end">
+          <Button variant="primary" onClick={() => setIsModalOpen(false)}>OK</Button>
+        </div>
+      </Modal>
     </div>
   );
 };

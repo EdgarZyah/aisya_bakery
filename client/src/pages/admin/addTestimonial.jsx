@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Button from "../../components/common/button";
 import { useNavigate } from "react-router-dom";
 import Card from "../../components/common/card";
+import Modal from "../../components/common/modal"; // Impor komponen Modal
 
 const API_URL = "http://localhost:5000/api/testimonials";
 
@@ -16,6 +17,9 @@ const AddTestimonial = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   const validate = () => {
     const err = {};
@@ -38,7 +42,12 @@ const AddTestimonial = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validate()) return;
+    if (!validate()) {
+      setModalTitle("Peringatan");
+      setModalMessage("Mohon lengkapi semua kolom yang wajib diisi dan periksa kembali batas karakter.");
+      setIsModalOpen(true);
+      return;
+    }
     const token = localStorage.getItem("token");
 
     const formData = new FormData();
@@ -61,10 +70,14 @@ const AddTestimonial = () => {
         const errorData = await response.json();
         throw new Error(errorData.msg || "Gagal menambahkan testimonial.");
       }
-      alert("Testimonial berhasil ditambahkan!");
-      navigate("/admin/testimonials");
+      setModalTitle("Berhasil");
+      setModalMessage("Testimonial berhasil ditambahkan!");
+      setIsModalOpen(true);
+      setTimeout(() => navigate("/admin/testimonials"), 1500); // Redirect setelah modal ditutup
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      setModalTitle("Error");
+      setModalMessage(`Error: ${error.message}`);
+      setIsModalOpen(true);
     }
   };
 
@@ -138,6 +151,13 @@ const AddTestimonial = () => {
           </Button>
         </form>
       </Card>
+      
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle}>
+        <p>{modalMessage}</p>
+        <div className="mt-4 flex justify-end">
+          <Button variant="primary" onClick={() => setIsModalOpen(false)}>OK</Button>
+        </div>
+      </Modal>
     </div>
   );
 };
