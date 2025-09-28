@@ -29,14 +29,14 @@ Node.js (LTS versions 18.x or 20.x are recommended)
 ### Database Migration
 
     npx sequelize-cli db:create 
-    npx sequelize db:migrate 
+    npx sequelize-cli db:migrate 
     npx sequelize-cli db:seed:all 
 
 ### initial user in seeder
 
-email    : -
+email    : admin@aisya.com
 
-password : -
+password : password123
 
 ### Run the server
     
