@@ -133,7 +133,7 @@ const EditProduct = () => {
 
   return (
     <div className="p-6 bg-[var(--color-background)] text-[var(--color-text)] min-h-screen">
-      <Card className="max-w-4xl mx-auto">
+      <Card className="w-full mx-auto">
         <h2 className="text-2xl font-semibold mb-6">Edit Produk</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">

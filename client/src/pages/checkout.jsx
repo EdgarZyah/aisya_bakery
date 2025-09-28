@@ -3,30 +3,44 @@ import { Link, useNavigate } from "react-router-dom";
 import Card from "../components/common/card";
 import Button from "../components/common/button";
 import Loader from "../components/common/loader";
-import Receipt from "../components/receipt";
 import Modal from "../components/common/modal";
 
 const Checkout = ({ cartItems, onClearCart }) => {
   const [loading, setLoading] = useState(false);
-  const [orderComplete, setOrderComplete] = useState(false);
-  const [orderData, setOrderData] = useState(null);
+  const [user, setUser] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
-  const [redirectPath, setRedirectPath] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const navigate = useNavigate();
 
-  const total = cartItems.reduce(
-    (acc, item) => acc + item.price * item.quantity,
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const subtotal = cartItems.reduce(
+    (total, item) => total + item.price * item.quantity,
     0
   );
 
   const handleModalClose = () => {
     setIsModalOpen(false);
-    if (redirectPath) {
-      navigate(redirectPath);
-    }
+  };
+
+  const handleOpenConfirmModal = () => {
+    setShowConfirmModal(true);
+    setModalTitle("Konfirmasi Pesanan");
+    setModalMessage("Apakah Anda yakin ingin melanjutkan pembayaran?");
+    setIsModalOpen(true);
+  };
+
+  const handleCancelConfirmModal = () => {
+    setShowConfirmModal(false);
+    setIsModalOpen(false);
   };
 
   const handleCheckout = async () => {
@@ -35,7 +49,6 @@ const Checkout = ({ cartItems, onClearCart }) => {
     if (!token) {
       setModalTitle("Peringatan");
       setModalMessage("Anda harus login untuk melanjutkan checkout.");
-      setRedirectPath("/login");
       setIsModalOpen(true);
       setLoading(false);
       return;
@@ -64,34 +77,24 @@ const Checkout = ({ cartItems, onClearCart }) => {
         throw new Error(data.message || "Gagal memproses pesanan.");
       }
 
-      setOrderData(data);
-      setOrderComplete(true);
+      const checkoutItemsSnapshot = [...cartItems]; // Ambil snapshot item keranjang
+
       onClearCart();
-      
       localStorage.removeItem("cartItems"); 
-      setModalTitle("Berhasil");
-      setModalMessage("Pesanan berhasil dibuat!");
-      setRedirectPath(null);
-      setIsModalOpen(true);
+
+      // Redirect ke halaman sukses dengan state
+      navigate("/checkout/success", { state: { orderData: data, checkoutItems: checkoutItemsSnapshot, user } });
 
     } catch (error) {
       console.error("Checkout Error:", error);
       setModalTitle("Checkout Gagal");
       setModalMessage(error.message);
-      setRedirectPath(null);
       setIsModalOpen(true);
     } finally {
       setLoading(false);
+      setShowConfirmModal(false);
     }
   };
-
-  if (orderComplete) {
-    return (
-      <div className="flex justify-center items-center min-h-screen p-6">
-        <Receipt data={{ ...orderData, items: cartItems, subtotal: total, shippingCost: 0, paymentMethod: "Transfer Bank", buyerName: "User", shippingAddress: "Alamat Pengiriman", notes: ""}} />
-      </div>
-    );
-  }
 
   if (cartItems.length === 0) {
     return (
@@ -106,41 +109,80 @@ const Checkout = ({ cartItems, onClearCart }) => {
   }
 
   return (
-    <div className="p-6">
-      <Card className="max-w-3xl mx-auto">
-        <h2 className="text-2xl font-bold mb-4">Checkout</h2>
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold mb-2">Ringkasan Pesanan</h3>
-          <ul className="space-y-2 mb-4">
-            {cartItems.map((item) => (
-              <li key={item.id} className="flex justify-between">
-                <span>
-                  {item.name} ({item.quantity}x)
-                </span>
-                <span>Rp {(item.price * item.quantity).toLocaleString('id-ID')}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="border-t pt-4 font-bold text-lg flex justify-between">
-            <span>Total</span>
-            <span>Rp {total.toLocaleString('id-ID')}</span>
-          </div>
+    <div className="p-6 min-h-screen max-w-7xl mx-auto">
+      <h1 className="text-3xl font-bold text-center mb-8 text-[var(--color-text)]">Keranjang Belanja</h1>
+      <div className="flex flex-col md:flex-row gap-8">
+        {/* Bagian Kiri: Daftar Item Keranjang */}
+        <div className="md:w-3/4">
+          <Card className="p-6">
+            <div className="divide-y divide-gray-200">
+              {cartItems.map((item) => (
+                <div key={item.id} className="flex items-center py-4">
+                  <div className="w-24 h-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
+                    <img
+                      src={`http://localhost:5000/${item.image}`}
+                      alt={item.name}
+                      className="h-full w-full object-cover object-center"
+                    />
+                  </div>
+                  <div className="ml-4 flex flex-1 flex-col">
+                    <div>
+                      <div className="flex justify-between text-base font-medium text-[var(--color-text)]">
+                        <h3>{item.name}</h3>
+                        <p className="ml-4">
+                          Rp {(item.price * item.quantity)?.toLocaleString('id-ID')}
+                        </p>
+                      </div>
+                      <p className="mt-1 text-sm text-[var(--color-primary)]">
+                        Harga satuan: Rp {item.price?.toLocaleString('id-ID')}
+                      </p>
+                    </div>
+                    <div className="flex flex-1 items-end justify-between text-sm mt-2">
+                      <div className="text-gray-500">
+                        Qty: {item.quantity}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
         </div>
-        <div className="mt-6">
-          <Button
-            variant="primary"
-            onClick={handleCheckout}
-            disabled={loading}
-            className="w-full"
-          >
-            {loading ? <Loader /> : "Lanjutkan Pembayaran"}
-          </Button>
+        
+        {/* Bagian Kanan: Ringkasan Harga dan Checkout */}
+        <div className="md:w-1/4">
+          <Card className="p-6">
+            <h2 className="text-xl font-bold mb-4 text-[var(--color-text)]">Ringkasan Keranjang</h2>
+            <div className="flex justify-between text-lg font-semibold mb-2 text-[var(--color-text)]">
+              <span>Subtotal</span>
+              <span>Rp {subtotal.toLocaleString('id-ID')}</span>
+            </div>
+            <p className="text-sm text-gray-500 mb-6">Biaya pengiriman dan pajak akan dihitung pada langkah selanjutnya.</p>
+            <Button
+              onClick={handleOpenConfirmModal}
+              disabled={subtotal === 0 || loading}
+              className="w-full"
+            >
+              {loading ? <Loader /> : "Lanjutkan Pembayaran"}
+            </Button>
+          </Card>
         </div>
-      </Card>
-      <Modal isOpen={isModalOpen} onClose={handleModalClose} title={modalTitle}>
+      </div>
+      
+      {/* Modal untuk pesan error atau peringatan */}
+      <Modal isOpen={isModalOpen && !showConfirmModal} onClose={handleModalClose} title={modalTitle}>
         <p>{modalMessage}</p>
         <div className="mt-4 flex justify-end">
           <Button variant="primary" onClick={handleModalClose}>OK</Button>
+        </div>
+      </Modal>
+
+      {/* Modal Konfirmasi Checkout */}
+      <Modal isOpen={isModalOpen && showConfirmModal} onClose={handleCancelConfirmModal} title={modalTitle}>
+        <p>{modalMessage}</p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline" onClick={handleCancelConfirmModal}>Batal</Button>
+          <Button variant="primary" onClick={handleCheckout}>Ya</Button>
         </div>
       </Modal>
     </div>

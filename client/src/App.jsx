@@ -8,6 +8,7 @@ import ProtectedRoute from "./components/protectedRoute";
 import Sidebar from "./components/layout/sidebar"; // Impor sidebar yang direfaktor
 import { adminMenu } from "./components/layout/adminMenu/adminMenu"; // Impor menu admin
 import { userMenu } from "./components/layout/userMenu/userMenu"; // Impor menu user
+import OrderSuccessPage from "./pages/orderSuccessPage"; // Import halaman baru
 
 import Home from "./pages/home";
 import Products from "./pages/products";
@@ -102,6 +103,7 @@ const App = () => {
           <Route path="/user/orders" element={<DashboardLayout menu={userMenu}><MyOrdersPage /></DashboardLayout>} />
           <Route path="/user/profile" element={<DashboardLayout menu={userMenu}><UserProfilePage /></DashboardLayout>} />
           <Route path="/checkout" element={<AppLayout><Checkout cartItems={cartItems} onClearCart={handleClearCart} /></AppLayout>} />
+          <Route path="/checkout/success" element={<AppLayout><OrderSuccessPage /></AppLayout>} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={['admin']} />}>

@@ -83,7 +83,7 @@ const AddTestimonial = () => {
 
   return (
     <div className="p-6 bg-purewhite text-[var(--color-text)] min-h-screen">
-      <Card className="max-w-2xl mx-auto">
+      <Card className="w-full mx-auto">
         <h2 className="text-2xl font-semibold mb-6">Tambah Testimonial Baru</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div>
@@ -147,7 +147,7 @@ const AddTestimonial = () => {
           </div>
 
           <Button type="submit" variant="primary" className="mt-4">
-            Simpan Testimonial
+            Simpan Testimoni
           </Button>
         </form>
       </Card>

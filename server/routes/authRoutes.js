@@ -42,7 +42,8 @@ router.post('/register', async (req, res) => {
       { expiresIn: '1h' },
       (err, token) => {
         if (err) throw err;
-        res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+        // Perbaikan: Tambahkan address dan phoneNumber ke objek user yang dikirim
+        res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, address: user.address, phoneNumber: user.phoneNumber } });
       }
     );
   } catch (err) {
@@ -80,7 +81,8 @@ router.post('/login', async (req, res) => {
       { expiresIn: '1h' },
       (err, token) => {
         if (err) throw err;
-        res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+        // Perbaikan: Tambahkan address dan phoneNumber ke objek user yang dikirim
+        res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, address: user.address, phoneNumber: user.phoneNumber } });
       }
     );
   } catch (err) {
@@ -125,7 +127,7 @@ router.get('/users/:id', auth, async (req, res) => {
 
 // @route   PUT /api/auth/users/:id
 // @desc    Update user profile
-// @access  Private
+// @access  Private (only self)
 router.put('/users/:id', auth, async (req, res) => {
   if (req.user.id !== parseInt(req.params.id)) {
     return res.status(403).json({ message: 'Akses ditolak. Anda hanya bisa memperbarui profil Anda sendiri.' });

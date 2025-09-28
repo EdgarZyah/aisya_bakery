@@ -15,66 +15,80 @@ const Products = ({ onAddToCart }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState("all");
+
   const [page, setPage] = useState(1);
   const pageSize = 9;
 
+  // Fetch categories + products
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Fetch categories first
+        // Fetch kategori
         const catResponse = await fetch(CATEGORY_API_URL);
         const catData = await catResponse.json();
-        setCategories([{ id: "all", name: "all" }, ...catData]);
+        setCategories([{ id: "all", name: "Semua" }, ...catData]);
 
-        // Fetch products with filters
+        // Fetch produk (dengan filter search & kategori)
         const url = new URL(API_URL);
-        if (search) {
-          url.searchParams.append("search", search);
-        }
-        if (selectedCat !== "all") {
-          url.searchParams.append("categoryId", selectedCat);
-        }
+        if (search) url.searchParams.append("search", search);
+        if (selectedCat !== "all") url.searchParams.append("categoryId", selectedCat);
 
         const productResponse = await fetch(url.toString());
-        if (!productResponse.ok) {
-          throw new Error("Failed to fetch products");
-        }
+        if (!productResponse.ok) throw new Error("Gagal memuat produk");
+
         const productData = await productResponse.json();
         setProducts(productData);
       } catch (e) {
         console.error(e);
-        setError("Gagal memuat data produk.");
+        setError("Terjadi kesalahan saat memuat produk.");
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
   }, [search, selectedCat]);
 
+  // Pagination
   const totalPages = Math.ceil(products.length / pageSize);
   const paginated = products.slice((page - 1) * pageSize, page * pageSize);
 
+  // State: Loading
   if (loading) {
-    return <div className="flex justify-center items-center h-screen"><Loader /></div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader />
+      </div>
+    );
   }
 
+  // State: Error
   if (error) {
-    return <div className="text-center text-red-500 my-10">{error}</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p className="text-red-500 text-lg">{error}</p>
+      </div>
+    );
   }
 
   return (
     <main className="w-full mx-auto">
+      {/* Hero Section */}
       <Hero
         title="Produk Roti & Kue Terbaik"
-        subtitle="Berbagai pilihan roti dan kue segar dengan cita rasa istimewa."
+        subtitle="Nikmati pilihan roti dan kue segar dengan cita rasa istimewa setiap hari."
       />
-      <div className="flex flex-col sm:flex-row gap-6 max-w-7xl mx-auto py-6">
-        <div className="sm:w-64">
+
+      {/* Konten */}
+      <div className="flex flex-col sm:flex-row gap-6 max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        {/* Sidebar kiri */}
+        <aside className="sm:w-64 space-y-6">
           <SearchBar
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -83,6 +97,7 @@ const Products = ({ onAddToCart }) => {
               setPage(1);
             }}
           />
+
           <CategoryMenu
             categories={categories}
             selected={selectedCat}
@@ -91,26 +106,44 @@ const Products = ({ onAddToCart }) => {
               setPage(1);
             }}
           />
-        </div>
-        <div className="flex-1">
-          <div className="flex justify-between items-center mb-3">
-            <div>
-              Showing {(page - 1) * pageSize + 1}-
-              {Math.min(page * pageSize, products.length)} of {products.length}{" "}
-              results
+        </aside>
+
+        {/* Konten produk */}
+        <section className="flex-1 space-y-11">
+          {/* Info jumlah produk */}
+          <div className="flex justify-between items-center text-sm text-gray-600">
+            <span>
+              Menampilkan{" "}
+              <strong>
+                {(page - 1) * pageSize + 1} -{" "}
+                {Math.min(page * pageSize, products.length)}
+              </strong>{" "}
+              dari <strong>{products.length}</strong> produk
+            </span>
+          </div>
+
+          {/* Grid produk */}
+          {paginated.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {paginated.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAddToCart={onAddToCart}
+                />
+              ))}
             </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {paginated.map((product) => (
-              <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
-            ))}
-          </div>
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            onChange={(p) => setPage(p)}
-          />
-        </div>
+          ) : (
+            <div className="text-center py-10 text-gray-500">
+              Tidak ada produk ditemukan.
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+          )}
+        </section>
       </div>
     </main>
   );
