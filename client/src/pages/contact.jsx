@@ -19,7 +19,22 @@ const Contact = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert("Pesan dikirim!\n" + JSON.stringify(form, null, 2));
+
+    const phoneNumber = "6289688841511"; // dummy nomor WA
+    const waMessage = `
+Halo, saya ${form.name}.
+Email: ${form.email}
+Phone: ${form.phone}
+Subject: ${form.subject}
+
+Pesan:
+${form.message}
+    `;
+
+    const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
+      waMessage
+    )}`;
+    window.open(url, "_blank");
   };
 
   return (
@@ -28,16 +43,17 @@ const Contact = () => {
         title="Hubungi Kami"
         subtitle="Ada pertanyaan atau pesanan khusus? Kami siap membantu Anda."
         ctaText="Kirim Pesan"
-        onCtaClick={() => alert("Navigasi ke form kontak")}
+        onCtaClick={() =>
+          document.getElementById("contact-form").scrollIntoView({
+            behavior: "smooth",
+          })
+        }
       />
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-10 px-4 py-16">
         <div className="md:w-1/2 flex flex-col justify-center mb-10 md:mb-0">
           <h1 className="text-4xl font-bold mb-2 text-[var(--color-text)]">
             Get In Touch
           </h1>
-          <p className="mb-2 text-[var(--color-primary)] font-medium">
-            Visit our brand stores!
-          </p>
           <p className="text-sm text-[var(--color-text)]">
             Memanfaatkan kerangka kerja tangkas untuk memberikan ringkasan yang
             kuat untuk ikhtisar tingkat tinggi. Pendekatan iteratif terhadap
@@ -47,7 +63,11 @@ const Contact = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="md:w-1/2 flex flex-col gap-4">
+        <form
+          id="contact-form"
+          onSubmit={handleSubmit}
+          className="md:w-1/2 flex flex-col gap-4"
+        >
           <input
             type="text"
             name="name"
@@ -99,17 +119,17 @@ const Contact = () => {
             required
             className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] transition"
           />
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-3">
             <Button
               variant="primary"
               type="submit"
               className="px-8 py-2 rounded-full shadow"
             >
-              Send Message
+              Kirim ke WhatsApp
             </Button>
           </div>
         </form>
-      </div>{" "}
+      </div>
     </main>
   );
 };
