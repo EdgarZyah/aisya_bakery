@@ -4,8 +4,7 @@ import Button from "../../components/common/button";
 import Loader from "../../components/common/loader";
 import Card from "../../components/common/card";
 import Modal from "../../components/common/modal";
-
-const API_URL = "http://localhost:5000/api/testimonials";
+import axiosClient from "../../api/axiosClient";
 
 const EditTestimonial = () => {
   const { id } = useParams();
@@ -28,13 +27,10 @@ const EditTestimonial = () => {
     const fetchTestimonial = async () => {
       const token = localStorage.getItem("token");
       try {
-        const response = await fetch(`${API_URL}/${id}`, {
+        const response = await axiosClient.get(`/testimonials/${id}`, {
           headers: { "x-auth-token": token },
         });
-        if (!response.ok) {
-          throw new Error("Gagal memuat testimonial.");
-        }
-        const data = await response.json();
+        const data = response.data;
         setForm({
           name: data.name,
           comment: data.comment,
@@ -57,11 +53,12 @@ const EditTestimonial = () => {
     if (form.comment.length > CHARACTER_LIMIT) {
       err.comment = `Komentar tidak boleh melebihi ${CHARACTER_LIMIT} karakter`;
     }
-
-    if (form.avatar && !['image/jpeg', 'image/png'].includes(form.avatar.type)) {
+    if (
+      form.avatar &&
+      !["image/jpeg", "image/png"].includes(form.avatar.type)
+    ) {
       err.avatar = "Hanya file JPG, JPEG, dan PNG yang diizinkan.";
     }
-
     setErrors(err);
     return Object.keys(err).length === 0;
   };
@@ -88,7 +85,9 @@ const EditTestimonial = () => {
 
     if (!validate()) {
       setModalTitle("Peringatan");
-      setModalMessage("Mohon periksa kembali input Anda dan tipe file yang diunggah.");
+      setModalMessage(
+        "Mohon periksa kembali input Anda dan tipe file yang diunggah."
+      );
       setIsModalOpen(true);
       return;
     }
@@ -101,24 +100,17 @@ const EditTestimonial = () => {
     }
 
     try {
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: "PUT",
+      await axiosClient.put(`/testimonials/${id}`, formData, {
         headers: {
           "x-auth-token": token,
         },
-        body: formData,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.msg || "Gagal memperbarui testimonial.");
-      }
       setModalTitle("Berhasil");
       setModalMessage("Testimonial berhasil diperbarui!");
       setIsModalOpen(true);
     } catch (error) {
       setModalTitle("Error");
-      setModalMessage(`Error: ${error.message}`);
+      setModalMessage(`Error: ${error.response?.data?.msg || error.message}`);
       setIsModalOpen(true);
     }
   };
@@ -210,11 +202,13 @@ const EditTestimonial = () => {
           </Button>
         </form>
       </Card>
-      
+
       <Modal isOpen={isModalOpen} onClose={handleModalClose} title={modalTitle}>
         <p>{modalMessage}</p>
         <div className="mt-4 flex justify-end">
-          <Button variant="primary" onClick={handleModalClose}>OK</Button>
+          <Button variant="primary" onClick={handleModalClose}>
+            OK
+          </Button>
         </div>
       </Modal>
     </div>

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Button from "../../components/common/button";
 import { Link, useNavigate } from "react-router-dom";
 import Modal from "../../components/common/modal";
+import axiosClient from "../../api/axiosClient";
 
 const Signup = () => {
   const [form, setForm] = useState({
@@ -38,17 +39,10 @@ const Signup = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
-        method: "POST",
+      const response = await axiosClient.post("/auth/register", form, {
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
-      }
+      const data = response.data;
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
@@ -57,11 +51,14 @@ const Signup = () => {
       setModalMessage(`Akun berhasil dibuat dengan email: ${form.email}`);
       setRedirectTo("/user/dashboard");
       setIsModalOpen(true);
-      
     } catch (error) {
       console.error("Registration Error:", error.message);
       setModalTitle("Registrasi Gagal");
-      setModalMessage(`Registrasi gagal: ${error.message}`);
+      setModalMessage(
+        `Registrasi gagal: ${
+          error.response?.data?.message || error.message || "Unknown error"
+        }`
+      );
       setRedirectTo(null);
       setIsModalOpen(true);
     }

@@ -6,6 +6,7 @@ import Modal from '../../components/common/modal';
 import Button from '../../components/common/button';
 import Input from '../../components/common/input';
 import Pagination from '../../components/pagination';
+import axiosClient, { BASE_URL_IMAGES } from '../../api/axiosClient';
 
 const MyOrdersPage = () => {
   const [orders, setOrders] = useState([]);
@@ -25,14 +26,10 @@ const MyOrdersPage = () => {
     setLoading(true);
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch('http://localhost:5000/api/orders/user-orders', {
+      const response = await axiosClient.get('/orders/user-orders', {
         headers: { 'x-auth-token': token },
       });
-      if (!response.ok) {
-        throw new Error('Gagal memuat pesanan');
-      }
-      const data = await response.json();
-      setOrders(data);
+      setOrders(response.data);
     } catch (err) {
       setError(err.message);
       setMessageTitle("Error");
@@ -93,18 +90,15 @@ const MyOrdersPage = () => {
     formData.append("paymentProof", paymentProof);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/orders/upload-payment-proof/${selectedOrder.id}`, {
-        method: "PUT",
-        headers: {
-          "x-auth-token": token,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Gagal mengunggah bukti pembayaran.");
-      }
+      const response = await axiosClient.put(
+        `/orders/upload-payment-proof/${selectedOrder.id}`,
+        formData,
+        {
+          headers: {
+            "x-auth-token": token,
+          },
+        }
+      );
       setMessageTitle("Berhasil");
       setMessageContent("Bukti pembayaran berhasil diunggah!");
       setIsMessageModalOpen(true);
@@ -112,7 +106,7 @@ const MyOrdersPage = () => {
       fetchOrders();
     } catch (e) {
       setMessageTitle("Error");
-      setMessageContent(`Error: ${e.message}`);
+      setMessageContent(`Error: ${e.response?.data?.message || e.message}`);
       setIsMessageModalOpen(true);
     } finally {
       setUploading(false);
@@ -198,7 +192,7 @@ const MyOrdersPage = () => {
               <div className="mt-4">
                 <h4 className="font-semibold">Bukti Pembayaran:</h4>
                 <a
-                  href={`http://localhost:5000/${selectedOrder.paymentProofUrl}`}
+                  href={`${BASE_URL_IMAGES}/${selectedOrder.paymentProofUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline"

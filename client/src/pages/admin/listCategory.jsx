@@ -5,8 +5,7 @@ import Loader from "../../components/common/loader";
 import Card from "../../components/common/card";
 import Modal from "../../components/common/modal";
 import Pagination from "../../components/pagination";
-
-const API_URL = "http://localhost:5000/api/categories";
+import axiosClient from "../../api/axiosClient";
 
 const ListCategory = () => {
   const [categories, setCategories] = useState([]);
@@ -25,12 +24,9 @@ const ListCategory = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await fetch(API_URL);
-      if (!response.ok) {
-        throw new Error("Gagal memuat kategori.");
-      }
-      const data = await response.json();
-      setCategories(data);
+      const response = await axiosClient.get("/categories");
+      setCategories(response.data);
+      setError(null);
     } catch (e) {
       setError(e.message);
       setModalTitle("Error");
@@ -58,28 +54,25 @@ const ListCategory = () => {
     }
 
     try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-auth-token": token,
-        },
-        body: JSON.stringify({ name: newCategoryName }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.msg || "Gagal menambahkan kategori.");
-      }
+      const response = await axiosClient.post(
+        "/categories",
+        { name: newCategoryName },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "x-auth-token": token,
+          },
+        }
+      );
 
       setNewCategoryName("");
-      fetchCategories();
+      await fetchCategories();
       setModalTitle("Berhasil");
       setModalMessage("Kategori berhasil ditambahkan.");
       setIsModalOpen(true);
     } catch (e) {
       setModalTitle("Error");
-      setModalMessage(`Error: ${e.message}`);
+      setModalMessage(`Error: ${e.response?.data?.msg || e.message}`);
       setIsModalOpen(true);
     } finally {
       setSubmitting(false);
@@ -89,7 +82,9 @@ const ListCategory = () => {
   const handleDeleteClick = (id) => {
     setCategoryToDelete(id);
     setModalTitle("Konfirmasi Hapus");
-    setModalMessage("Yakin ingin menghapus kategori ini? Produk yang terkait akan menjadi 'Uncategorized'.");
+    setModalMessage(
+      "Yakin ingin menghapus kategori ini? Produk yang terkait akan menjadi 'Uncategorized'."
+    );
     setIsConfirmModal(true);
     setIsModalOpen(true);
   };
@@ -97,22 +92,16 @@ const ListCategory = () => {
   const handleConfirmDelete = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(`${API_URL}/${categoryToDelete}`, {
-        method: "DELETE",
+      const response = await axiosClient.delete(`/categories/${categoryToDelete}`, {
         headers: { "x-auth-token": token },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.msg || "Gagal menghapus kategori.");
-      }
-
-      fetchCategories();
+      await fetchCategories();
       setModalTitle("Berhasil");
       setModalMessage("Kategori berhasil dihapus!");
     } catch (e) {
       setModalTitle("Error");
-      setModalMessage(`Error: ${e.message}`);
+      setModalMessage(`Error: ${e.response?.data?.msg || e.message}`);
     } finally {
       setIsModalOpen(false);
       setIsConfirmModal(false);
@@ -124,7 +113,7 @@ const ListCategory = () => {
     { header: "ID", accessor: "id" },
     { header: "Nama Kategori", accessor: "name" },
   ];
-  
+
   const totalPages = Math.ceil(categories.length / itemsPerPage);
   const paginatedData = categories.slice(
     (currentPage - 1) * itemsPerPage,
@@ -132,7 +121,11 @@ const ListCategory = () => {
   );
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen"><Loader /></div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader />
+      </div>
+    );
   }
 
   if (error) {
@@ -172,26 +165,33 @@ const ListCategory = () => {
           </button>
         )}
       />
+
       <Pagination page={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
-      
-      <Modal 
-        isOpen={isModalOpen} 
+
+      <Modal
+        isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
           setIsConfirmModal(false);
           setCategoryToDelete(null);
-        }} 
+        }}
         title={modalTitle}
       >
         <p>{modalMessage}</p>
         {isConfirmModal ? (
           <div className="mt-4 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>Batal</Button>
-            <Button variant="primary" onClick={handleConfirmDelete}>Hapus</Button>
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+              Batal
+            </Button>
+            <Button variant="primary" onClick={handleConfirmDelete}>
+              Hapus
+            </Button>
           </div>
         ) : (
           <div className="mt-4 flex justify-end">
-            <Button variant="primary" onClick={() => setIsModalOpen(false)}>OK</Button>
+            <Button variant="primary" onClick={() => setIsModalOpen(false)}>
+              OK
+            </Button>
           </div>
         )}
       </Modal>

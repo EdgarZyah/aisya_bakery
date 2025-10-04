@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import BreadBanner from "../assets/Bread_and_wheat_on_wooden_background.jpg";
 import Loader from "./common/loader";
-
-const API_URL = "http://localhost:5000/api/testimonials";
+import axiosClient, { BASE_URL_IMAGES } from "../api/axiosClient";
 
 const truncateString = (str, num) => {
   if (str.length > num) {
@@ -35,12 +34,9 @@ const Testimoni = () => {
 
   const fetchTestimonials = async () => {
     try {
-      const response = await fetch(API_URL);
-      if (!response.ok) {
-        throw new Error("Gagal memuat testimonial");
-      }
-      const data = await response.json();
-      setTestimonials(data);
+      const response = await axiosClient.get("/testimonials");
+      setTestimonials(response.data);
+      setError(null);
     } catch (e) {
       console.error("Fetch Testimonials Error:", e);
       setError("Gagal memuat testimonial. Silakan coba lagi nanti.");
@@ -106,7 +102,7 @@ const Testimoni = () => {
                   >
                     <div className="flex flex-col items-center justify-between min-h-[300px] bg-[var(--color-primary)] bg-opacity-70 rounded-lg p-6 shadow-lg text-[var(--color-background)]">
                       <img
-                        src={testimonial.avatar ? `http://localhost:5000/${testimonial.avatar}` : "https://via.placeholder.com/100"}
+                        src={testimonial.avatar ? `${BASE_URL_IMAGES}/${testimonial.avatar}` : "https://via.placeholder.com/100"}
                         alt={testimonial.name}
                         className="rounded-full w-24 h-24 mb-4 object-cover border-2 border-[var(--color-background)]"
                       />

@@ -3,8 +3,7 @@ import Button from "../../components/common/button";
 import { useNavigate } from "react-router-dom";
 import Card from "../../components/common/card";
 import Modal from "../../components/common/modal";
-
-const API_URL = "http://localhost:5000/api/testimonials";
+import axiosClient from "../../api/axiosClient";
 
 const AddTestimonial = () => {
   const navigate = useNavigate();
@@ -25,10 +24,13 @@ const AddTestimonial = () => {
     const err = {};
     if (!form.name.trim()) err.name = "Nama harus diisi";
     if (!form.comment.trim()) err.comment = "Pesan testimonial harus diisi";
-    if (form.comment.length > CHARACTER_LIMIT) err.comment = `Komentar tidak boleh melebihi ${CHARACTER_LIMIT} karakter`;
+    if (form.comment.length > CHARACTER_LIMIT)
+      err.comment = `Komentar tidak boleh melebihi ${CHARACTER_LIMIT} karakter`;
 
-    // Validasi tipe file
-    if (form.avatar && !['image/jpeg', 'image/png'].includes(form.avatar.type)) {
+    if (
+      form.avatar &&
+      !["image/jpeg", "image/png"].includes(form.avatar.type)
+    ) {
       err.avatar = "Hanya file JPG, JPEG, dan PNG yang diizinkan.";
     }
 
@@ -50,7 +52,9 @@ const AddTestimonial = () => {
 
     if (!validate()) {
       setModalTitle("Peringatan");
-      setModalMessage("Mohon lengkapi semua kolom yang wajib diisi dan periksa kembali tipe file.");
+      setModalMessage(
+        "Mohon lengkapi semua kolom yang wajib diisi dan periksa kembali tipe file."
+      );
       setIsModalOpen(true);
       return;
     }
@@ -64,25 +68,22 @@ const AddTestimonial = () => {
     }
 
     try {
-      const response = await fetch(API_URL, {
-        method: "POST",
+      await axiosClient.post("/testimonials", formData, {
         headers: {
           "x-auth-token": token,
+          // Content-Type diatur otomatis oleh axios untuk FormData
         },
-        body: formData,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.msg || "Gagal menambahkan testimonial.");
-      }
       setModalTitle("Berhasil");
       setModalMessage("Testimonial berhasil ditambahkan!");
       setIsModalOpen(true);
       setTimeout(() => navigate("/admin/testimonials"), 1500);
     } catch (error) {
       setModalTitle("Error");
-      setModalMessage(`Error: ${error.message}`);
+      setModalMessage(
+        `Error: ${error.response?.data?.msg || error.message || "Gagal menambahkan testimonial."}`
+      );
       setIsModalOpen(true);
     }
   };
@@ -162,11 +163,17 @@ const AddTestimonial = () => {
           </Button>
         </form>
       </Card>
-      
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle}>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={modalTitle}
+      >
         <p>{modalMessage}</p>
         <div className="mt-4 flex justify-end">
-          <Button variant="primary" onClick={() => setIsModalOpen(false)}>OK</Button>
+          <Button variant="primary" onClick={() => setIsModalOpen(false)}>
+            OK
+          </Button>
         </div>
       </Modal>
     </div>

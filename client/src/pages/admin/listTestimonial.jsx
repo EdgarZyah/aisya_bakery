@@ -5,8 +5,7 @@ import Button from "../../components/common/button";
 import Loader from "../../components/common/loader";
 import Modal from "../../components/common/modal";
 import Pagination from "../../components/pagination";
-
-const API_URL = "http://localhost:5000/api/testimonials";
+import axiosClient, { BASE_URL_IMAGES } from "../../api/axiosClient";
 
 const ListTestimonial = () => {
   const [testimonials, setTestimonials] = useState([]);
@@ -28,17 +27,11 @@ const ListTestimonial = () => {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const response = await fetch(API_URL, {
-        headers: {
-          "x-auth-token": token,
-        },
+      const response = await axiosClient.get("/testimonials", {
+        headers: { "x-auth-token": token },
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.msg || "Gagal memuat testimonial");
-      }
-      const data = await response.json();
-      setTestimonials(data);
+      setTestimonials(response.data);
+      setError(null);
     } catch (e) {
       setError(e.message);
       setModalTitle("Error");
@@ -56,26 +49,19 @@ const ListTestimonial = () => {
     setIsConfirmModal(true);
     setIsModalOpen(true);
   };
-  
+
   const handleConfirmDelete = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(`${API_URL}/${testimonialToDelete}`, {
-        method: "DELETE",
-        headers: {
-          "x-auth-token": token,
-        },
+      await axiosClient.delete(`/testimonials/${testimonialToDelete}`, {
+        headers: { "x-auth-token": token },
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.msg || "Gagal menghapus testimonial.");
-      }
       setModalTitle("Berhasil");
       setModalMessage("Testimonial berhasil dihapus!");
-      fetchTestimonials();
+      await fetchTestimonials();
     } catch (e) {
       setModalTitle("Error");
-      setModalMessage(`Error: ${e.message}`);
+      setModalMessage(`Error: ${e.response?.data?.msg || e.message}`);
     } finally {
       setIsModalOpen(false);
       setIsConfirmModal(false);
@@ -93,7 +79,7 @@ const ListTestimonial = () => {
       cell: (row) =>
         row.avatar ? (
           <img
-            src={`http://localhost:5000/${row.avatar}`}
+            src={`${BASE_URL_IMAGES}/${row.avatar}`}
             alt="avatar"
             className="w-12 h-12 rounded-full object-cover"
           />
@@ -162,12 +148,18 @@ const ListTestimonial = () => {
         <p>{modalMessage}</p>
         {isConfirmModal ? (
           <div className="mt-4 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>Batal</Button>
-            <Button variant="primary" onClick={handleConfirmDelete}>Hapus</Button>
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+              Batal
+            </Button>
+            <Button variant="primary" onClick={handleConfirmDelete}>
+              Hapus
+            </Button>
           </div>
         ) : (
           <div className="mt-4 flex justify-end">
-            <Button variant="primary" onClick={() => setIsModalOpen(false)}>OK</Button>
+            <Button variant="primary" onClick={() => setIsModalOpen(false)}>
+              OK
+            </Button>
           </div>
         )}
       </Modal>

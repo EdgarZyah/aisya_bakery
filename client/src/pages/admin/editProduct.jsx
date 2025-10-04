@@ -4,9 +4,7 @@ import Button from "../../components/common/button";
 import Loader from "../../components/common/loader";
 import Card from "../../components/common/card";
 import Modal from "../../components/common/modal";
-
-const API_URL = "http://localhost:5000/api/products";
-const CATEGORY_API_URL = "http://localhost:5000/api/categories";
+import axiosClient from "../../api/axiosClient";
 
 const EditProduct = () => {
   const { id } = useParams();
@@ -32,18 +30,13 @@ const EditProduct = () => {
     const fetchData = async () => {
       const token = localStorage.getItem("token");
       try {
-        const catResponse = await fetch(CATEGORY_API_URL);
-        if (!catResponse.ok) throw new Error("Gagal memuat kategori.");
-        const catData = await catResponse.json();
-        setCategories(catData);
+        const catResponse = await axiosClient.get("/categories");
+        setCategories(catResponse.data);
 
-        const productResponse = await fetch(`${API_URL}/${id}`, {
+        const productResponse = await axiosClient.get(`/products/${id}`, {
           headers: { "x-auth-token": token },
         });
-        if (!productResponse.ok) {
-          throw new Error("Gagal memuat produk.");
-        }
-        const data = await productResponse.json();
+        const data = productResponse.data;
         setForm({
           name: data.name,
           description: data.description,
@@ -67,11 +60,12 @@ const EditProduct = () => {
 
   const validate = () => {
     const err = {};
-    // Validasi tipe file hanya jika file baru diunggah
-    if (form.imageUrl && !['image/jpeg', 'image/png'].includes(form.imageUrl.type)) {
+    if (
+      form.imageUrl &&
+      !["image/jpeg", "image/png"].includes(form.imageUrl.type)
+    ) {
       err.imageUrl = "Hanya file JPG, JPEG, dan PNG yang diizinkan.";
     }
-
     setErrors(err);
     return Object.keys(err).length === 0;
   };
@@ -102,10 +96,8 @@ const EditProduct = () => {
       setIsModalOpen(true);
       return;
     }
-    
     setLoading(true);
     const token = localStorage.getItem("token");
-    
     const formData = new FormData();
     formData.append("name", form.name);
     formData.append("description", form.description);
@@ -116,25 +108,18 @@ const EditProduct = () => {
     if (form.imageUrl) {
       formData.append("imageUrl", form.imageUrl);
     }
-    
     try {
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: "PUT",
+      await axiosClient.put(`/products/${id}`, formData, {
         headers: {
           "x-auth-token": token,
         },
-        body: formData,
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.msg || "Gagal memperbarui produk.");
-      }
       setModalTitle("Berhasil");
       setModalMessage("Produk berhasil diperbarui!");
       setIsModalOpen(true);
     } catch (error) {
       setModalTitle("Error");
-      setModalMessage(`Error: ${error.message}`);
+      setModalMessage(`Error: ${error.response?.data?.msg || error.message}`);
       setIsModalOpen(true);
     } finally {
       setLoading(false);
@@ -154,6 +139,7 @@ const EditProduct = () => {
       <Card className="w-full mx-auto h-screen overflow-y-auto">
         <h2 className="text-2xl font-semibold mb-6">Edit Produk</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          {/* Nama Produk */}
           <div className="flex flex-col gap-2">
             <label htmlFor="name" className="font-medium">
               Nama Produk
@@ -168,6 +154,7 @@ const EditProduct = () => {
               required
             />
           </div>
+          {/* Deskripsi */}
           <div className="flex flex-col gap-2">
             <label htmlFor="description" className="font-medium">
               Deskripsi
@@ -182,7 +169,9 @@ const EditProduct = () => {
               required
             />
           </div>
+          {/* Harga dan Stok */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Harga */}
             <div className="flex flex-col gap-2">
               <label htmlFor="price" className="font-medium">
                 Harga
@@ -197,6 +186,7 @@ const EditProduct = () => {
                 required
               />
             </div>
+            {/* Stok */}
             <div className="flex flex-col gap-2">
               <label htmlFor="stock" className="font-medium">
                 Stok
@@ -212,7 +202,7 @@ const EditProduct = () => {
               />
             </div>
           </div>
-          
+          {/* Kategori */}
           <div className="flex flex-col gap-2">
             <label htmlFor="categoryId" className="font-medium">
               Kategori
@@ -233,7 +223,7 @@ const EditProduct = () => {
               ))}
             </select>
           </div>
-
+          {/* Produk Unggulan */}
           <div className="flex items-center gap-2 mt-2">
             <input
               type="checkbox"
@@ -247,7 +237,7 @@ const EditProduct = () => {
               Tandai sebagai Produk Unggulan
             </label>
           </div>
-
+          {/* Upload Gambar */}
           <div className="flex flex-col gap-2">
             <label htmlFor="imageUrl" className="font-medium">
               Gambar Produk
@@ -258,34 +248,41 @@ const EditProduct = () => {
               name="imageUrl"
               onChange={handleChange}
               className={`p-3 border rounded ${
-                errors.imageUrl ? "border-red-500" : "border-gray-300"
+                errors.imageUrl ? "border-red-500" : ""
               }`}
               accept=".jpg,.jpeg,.png"
+              required
             />
-            {errors.imageUrl && (
-              <p className="text-red-500 text-sm">{errors.imageUrl}</p>
+            {/* Tampilan gambar saat ini jika ada */}
+            {form.oldImageUrl && (
+              <div className="mb-4">
+                <p className="mb-2">Gambar Saat Ini:</p>
+                <img
+                  src={`http://localhost:5000/${form.oldImageUrl}`}
+                  alt="Produk Saat Ini"
+                  className="w-32 h-32 object-cover rounded"
+                />
+              </div>
             )}
           </div>
-          {form.oldImageUrl && (
-            <div className="mb-4">
-              <p className="mb-2">Gambar Saat Ini:</p>
-              <img
-                src={`http://localhost:5000/${form.oldImageUrl}`}
-                alt="Produk Saat Ini"
-                className="w-32 h-32 object-cover rounded"
-              />
-            </div>
-          )}
-
-          <Button type="submit" variant="primary" className="mt-4" disabled={loading}>
+          {/* Tombol Simpan */}
+          <Button
+            type="submit"
+            variant="primary"
+            className="mt-4"
+            disabled={loading}
+          >
             {loading ? <Loader /> : "Simpan Perubahan"}
           </Button>
         </form>
       </Card>
+      {/* Modal konfirmasi */}
       <Modal isOpen={isModalOpen} onClose={handleModalClose} title={modalTitle}>
         <p>{modalMessage}</p>
         <div className="mt-4 flex justify-end">
-          <Button variant="primary" onClick={handleModalClose}>OK</Button>
+          <Button variant="primary" onClick={handleModalClose}>
+            OK
+          </Button>
         </div>
       </Modal>
     </div>

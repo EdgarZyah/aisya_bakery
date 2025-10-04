@@ -4,8 +4,7 @@ import Button from "../components/common/button";
 import Loader from "../components/common/loader";
 import NotFoundPage from "./notFound";
 import Modal from "../components/common/modal";
-
-const API_URL = "http://localhost:5000/api/products";
+import axiosClient, { BASE_URL_IMAGES } from "../api/axiosClient";
 
 const ProductPage = ({ onAddToCart }) => {
   const { id } = useParams();
@@ -20,12 +19,8 @@ const ProductPage = ({ onAddToCart }) => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await fetch(`${API_URL}/${id}`);
-        if (!response.ok) {
-          throw new Error("Product not found");
-        }
-        const data = await response.json();
-        setProduct(data);
+        const response = await axiosClient.get(`/products/${id}`);
+        setProduct(response.data);
       } catch (e) {
         console.error(e);
         setError(true);
@@ -64,7 +59,7 @@ const ProductPage = ({ onAddToCart }) => {
     <div className="max-w-6xl mx-auto p-6 md:p-12 flex flex-col md:flex-row gap-8 md:gap-12 text-[var(--color-text)]">
       <div className="md:w-1/2">
         <img
-          src={`http://localhost:5000/${product.imageUrl}`}
+          src={`${BASE_URL_IMAGES}/${product.imageUrl}`}
           alt={product.name}
           className="w-full h-auto object-cover rounded-lg shadow-md"
         />

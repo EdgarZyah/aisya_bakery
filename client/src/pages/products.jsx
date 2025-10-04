@@ -7,8 +7,7 @@ import ProductCard from "../components/productCard";
 import Pagination from "../components/pagination";
 import Loader from "../components/common/loader";
 
-const API_URL = "http://localhost:5000/api/products";
-const CATEGORY_API_URL = "http://localhost:5000/api/categories";
+import axiosClient from "../api/axiosClient"; // import axiosClient
 
 const Products = ({ onAddToCart }) => {
   const [products, setProducts] = useState([]);
@@ -22,7 +21,7 @@ const Products = ({ onAddToCart }) => {
   const [page, setPage] = useState(1);
   const pageSize = 9;
 
-  // Fetch categories + products
+  // Fetch categories + products dengan axiosClient
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -30,20 +29,16 @@ const Products = ({ onAddToCart }) => {
         setError(null);
 
         // Fetch kategori
-        const catResponse = await fetch(CATEGORY_API_URL);
-        const catData = await catResponse.json();
-        setCategories([{ id: "all", name: "Semua" }, ...catData]);
+        const catResponse = await axiosClient.get("/categories");
+        setCategories([{ id: "all", name: "Semua" }, ...catResponse.data]);
 
         // Fetch produk (dengan filter search & kategori)
-        const url = new URL(API_URL);
-        if (search) url.searchParams.append("search", search);
-        if (selectedCat !== "all") url.searchParams.append("categoryId", selectedCat);
+        const params = {};
+        if (search) params.search = search;
+        if (selectedCat !== "all") params.categoryId = selectedCat;
 
-        const productResponse = await fetch(url.toString());
-        if (!productResponse.ok) throw new Error("Gagal memuat produk");
-
-        const productData = await productResponse.json();
-        setProducts(productData);
+        const productResponse = await axiosClient.get("/products", { params });
+        setProducts(productResponse.data);
       } catch (e) {
         console.error(e);
         setError("Terjadi kesalahan saat memuat produk.");

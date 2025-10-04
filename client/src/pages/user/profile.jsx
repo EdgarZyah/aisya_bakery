@@ -5,6 +5,7 @@ import Loader from '../../components/common/loader';
 import Input from '../../components/common/input';
 import { useNavigate } from 'react-router-dom';
 import Modal from '../../components/common/modal';
+import axiosClient from '../../api/axiosClient';
 
 const UserProfilePage = () => {
   const [user, setUser] = useState({});
@@ -28,17 +29,12 @@ const UserProfilePage = () => {
         setLoading(false);
         return;
       }
-
       try {
-        const response = await fetch(`http://localhost:5000/api/auth/users/${userId}`, {
+        const response = await axiosClient.get(`/auth/users/${userId}`, {
           headers: { 'x-auth-token': token },
         });
-        if (!response.ok) {
-          throw new Error('Gagal memuat profil.');
-        }
-        const data = await response.json();
-        setUser(data);
-        setForm(data);
+        setUser(response.data);
+        setForm(response.data);
       } catch (err) {
         setError(err.message);
         setModalTitle("Error");
@@ -60,19 +56,13 @@ const UserProfilePage = () => {
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).id : null;
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/users/${userId}`, {
-        method: 'PUT',
+      const response = await axiosClient.put(`/auth/users/${userId}`, form, {
         headers: {
           'Content-Type': 'application/json',
           'x-auth-token': token,
         },
-        body: JSON.stringify(form),
       });
-      if (!response.ok) {
-        throw new Error('Gagal memperbarui profil.');
-      }
-      const data = await response.json();
-      setUser(data.user);
+      setUser(response.data.user);
       setIsEditing(false);
       setModalTitle("Berhasil");
       setModalMessage('Profil berhasil diperbarui!');
@@ -106,10 +96,10 @@ const UserProfilePage = () => {
           </div>
         ) : (
           <form onSubmit={handleUpdate}>
-            <Input label="Nama" name="name" value={form.name} onChange={handleChange} required />
-            <Input label="Email" name="email" type="email" value={form.email} onChange={handleChange} required />
-            <Input label="Alamat" name="address" value={form.address} onChange={handleChange} />
-            <Input label="No. Telepon" name="phoneNumber" value={form.phoneNumber} onChange={handleChange} />
+            <Input label="Nama" name="name" value={form.name || ""} onChange={handleChange} required />
+            <Input label="Email" name="email" type="email" value={form.email || ""} onChange={handleChange} required />
+            <Input label="Alamat" name="address" value={form.address || ""} onChange={handleChange} />
+            <Input label="No. Telepon" name="phoneNumber" value={form.phoneNumber || ""} onChange={handleChange} />
             <div className="flex gap-4 mt-4">
               <Button type="submit" variant="primary">Simpan</Button>
               <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Batal</Button>

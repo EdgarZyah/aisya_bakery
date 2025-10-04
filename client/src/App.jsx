@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Outlet } from "react-router-dom";
 
 import Navbar from "./components/layout/navbar";
@@ -37,7 +37,21 @@ import MyOrdersPage from "./pages/user/myOrders";
 import UserProfilePage from "./pages/user/profile";
 
 const App = () => {
-  const [cartItems, setCartItems] = useState([]);
+  // Ambil data keranjang dari localStorage saat aplikasi pertama kali dimuat
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const savedCart = localStorage.getItem("cartItems");
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (e) {
+      console.error("Failed to parse cart items from localStorage:", e);
+      return [];
+    }
+  });
+
+  // Simpan data keranjang ke localStorage setiap kali berubah
+  useEffect(() => {
+    localStorage.setItem("cartItems", JSON.stringify(cartItems));
+  }, [cartItems]);
 
   const handleAddToCart = (item) => {
     setCartItems(prevItems => {
@@ -46,6 +60,14 @@ const App = () => {
         return prevItems.map(i => i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i);
       }
       return [...prevItems, item];
+    });
+  };
+
+  const handleUpdateCartItem = (itemId, newQuantity) => {
+    setCartItems(prevItems => {
+      return prevItems.map(item =>
+        item.id === itemId ? { ...item, quantity: newQuantity } : item
+      );
     });
   };
 
@@ -59,7 +81,7 @@ const App = () => {
 
   const AppLayout = ({ children }) => (
     <div className="flex flex-col min-h-screen bg-[var(--color-background)] text-[var(--color-text)]">
-      <Navbar cartItems={cartItems} onRemoveItem={handleRemoveItem} />
+      <Navbar cartItems={cartItems} onRemoveItem={handleRemoveItem} onUpdateCartItem={handleUpdateCartItem} />
       <main className="flex-grow">{children}</main>
       <WhatsAppFloating />
       <Footer />
@@ -102,7 +124,7 @@ const App = () => {
           <Route path="/user/dashboard" element={<DashboardLayout menu={userMenu}><UserDashboard /></DashboardLayout>} />
           <Route path="/user/orders" element={<DashboardLayout menu={userMenu}><MyOrdersPage /></DashboardLayout>} />
           <Route path="/user/profile" element={<DashboardLayout menu={userMenu}><UserProfilePage /></DashboardLayout>} />
-          <Route path="/checkout" element={<AppLayout><Checkout cartItems={cartItems} onClearCart={handleClearCart} /></AppLayout>} />
+          <Route path="/checkout" element={<AppLayout><Checkout cartItems={cartItems} onClearCart={handleClearCart} onUpdateCartItem={handleUpdateCartItem} onRemoveCartItem={handleRemoveItem} /></AppLayout>} />
           <Route path="/checkout/success" element={<AppLayout><OrderSuccessPage /></AppLayout>} />
         </Route>
 

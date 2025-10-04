@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import Table from "../../components/common/table";
 import Button from "../../components/common/button";
 import Loader from "../../components/common/loader";
+import Card from "../../components/common/card";
 import Modal from "../../components/common/modal";
 import Pagination from "../../components/pagination";
-
-const API_URL = "http://localhost:5000/api/products";
+import axiosClient from "../../api/axiosClient";
 
 const ListProduct = () => {
   const [products, setProducts] = useState([]);
@@ -28,16 +28,11 @@ const ListProduct = () => {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const response = await fetch(API_URL, {
-        headers: {
-          "x-auth-token": token,
-        },
+      const response = await axiosClient.get("/products", {
+        headers: { "x-auth-token": token },
       });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      setProducts(data);
+      setProducts(response.data);
+      setError(null);
     } catch (e) {
       console.error("Failed to fetch products:", e);
       setError("Gagal memuat data produk.");
@@ -60,22 +55,15 @@ const ListProduct = () => {
   const handleConfirmDelete = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(`${API_URL}/${productToDelete}`, {
-        method: "DELETE",
-        headers: {
-          "x-auth-token": token,
-        },
+      await axiosClient.delete(`/products/${productToDelete}`, {
+        headers: { "x-auth-token": token },
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.msg || "Gagal menghapus produk.");
-      }
       setModalTitle("Berhasil");
       setModalMessage("Produk berhasil dihapus!");
-      fetchProducts();
+      await fetchProducts();
     } catch (e) {
       setModalTitle("Error");
-      setModalMessage(`Error: ${e.message}`);
+      setModalMessage(`Error: ${e.response?.data?.msg || e.message}`);
     } finally {
       setIsModalOpen(false);
       setIsConfirmModal(false);
@@ -89,16 +77,20 @@ const ListProduct = () => {
     {
       header: "Kategori",
       accessor: "category.name",
-      cell: (row) => row.category ? row.category.name : "Uncategorized"
+      cell: (row) => (row.category ? row.category.name : "Uncategorized"),
     },
     {
       header: "Harga (Rp)",
       accessor: "price",
       cell: (row) => `Rp ${row.price.toLocaleString("id-ID")}`,
     },
-    { header: "Featured", accessor: "isFeatured", cell: (row) => (row.isFeatured ? "Ya" : "Tidak") },
+    {
+      header: "Featured",
+      accessor: "isFeatured",
+      cell: (row) => (row.isFeatured ? "Ya" : "Tidak"),
+    },
   ];
-  
+
   const totalPages = Math.ceil(products.length / itemsPerPage);
   const paginatedData = products.slice(
     (currentPage - 1) * itemsPerPage,
@@ -106,7 +98,11 @@ const ListProduct = () => {
   );
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen"><Loader /></div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader />
+      </div>
+    );
   }
 
   if (error) {
@@ -154,12 +150,18 @@ const ListProduct = () => {
         <p>{modalMessage}</p>
         {isConfirmModal ? (
           <div className="mt-4 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>Batal</Button>
-            <Button variant="primary" onClick={handleConfirmDelete}>Hapus</Button>
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+              Batal
+            </Button>
+            <Button variant="primary" onClick={handleConfirmDelete}>
+              Hapus
+            </Button>
           </div>
         ) : (
           <div className="mt-4 flex justify-end">
-            <Button variant="primary" onClick={() => setIsModalOpen(false)}>OK</Button>
+            <Button variant="primary" onClick={() => setIsModalOpen(false)}>
+              OK
+            </Button>
           </div>
         )}
       </Modal>

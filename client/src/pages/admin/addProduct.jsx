@@ -4,9 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Card from "../../components/common/card";
 import Loader from "../../components/common/loader";
 import Modal from "../../components/common/modal";
-
-const API_URL = "http://localhost:5000/api/products";
-const CATEGORY_API_URL = "http://localhost:5000/api/categories";
+import axiosClient from "../../api/axiosClient";
 
 const AddProduct = () => {
   const navigate = useNavigate();
@@ -29,10 +27,8 @@ const AddProduct = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(CATEGORY_API_URL);
-        if (!response.ok) throw new Error("Failed to fetch categories");
-        const data = await response.json();
-        setCategories(data);
+        const response = await axiosClient.get("/categories");
+        setCategories(response.data);
       } catch (e) {
         console.error("Fetch categories error:", e);
         setModalTitle("Error");
@@ -47,13 +43,17 @@ const AddProduct = () => {
     const err = {};
     if (!form.name.trim()) err.name = "Nama produk harus diisi";
     if (!form.description.trim()) err.description = "Deskripsi harus diisi";
-    if (!form.price || isNaN(form.price) || form.price <= 0) err.price = "Harga harus angka positif";
-    if (!form.stock || isNaN(form.stock) || form.stock < 0) err.stock = "Stok harus angka non-negatif";
+    if (!form.price || isNaN(form.price) || Number(form.price) <= 0)
+      err.price = "Harga harus angka positif";
+    if (!form.stock || isNaN(form.stock) || Number(form.stock) < 0)
+      err.stock = "Stok harus angka non-negatif";
     if (!form.categoryId) err.categoryId = "Kategori harus dipilih";
     if (!form.imageUrl) err.imageUrl = "Gambar produk harus diunggah";
-    
-    // Validasi tipe file
-    if (form.imageUrl && !['image/jpeg', 'image/png'].includes(form.imageUrl.type)) {
+
+    if (
+      form.imageUrl &&
+      !["image/jpeg", "image/png"].includes(form.imageUrl.type)
+    ) {
       err.imageUrl = "Hanya file JPG, JPEG, dan PNG yang diizinkan.";
     }
 
@@ -83,14 +83,16 @@ const AddProduct = () => {
     e.preventDefault();
     if (!validate()) {
       setModalTitle("Peringatan");
-      setModalMessage("Mohon lengkapi semua kolom yang wajib diisi dan periksa kembali tipe file.");
+      setModalMessage(
+        "Mohon lengkapi semua kolom yang wajib diisi dan periksa kembali tipe file."
+      );
       setIsModalOpen(true);
       return;
     }
-    
+
     setLoading(true);
     const token = localStorage.getItem("token");
-    
+
     const formData = new FormData();
     formData.append("name", form.name);
     formData.append("description", form.description);
@@ -99,26 +101,23 @@ const AddProduct = () => {
     formData.append("categoryId", form.categoryId);
     formData.append("isFeatured", String(form.isFeatured));
     formData.append("imageUrl", form.imageUrl);
-    
+
     try {
-      const response = await fetch(API_URL, {
-        method: "POST",
+      await axiosClient.post("/products", formData, {
         headers: {
           "x-auth-token": token,
+          // Jangan atur Content-Type, axios atur otomatis saat FormData
         },
-        body: formData,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.msg || "Gagal menambahkan produk.");
-      }
       setModalTitle("Berhasil");
       setModalMessage("Produk berhasil ditambahkan!");
       setIsModalOpen(true);
     } catch (error) {
       setModalTitle("Error");
-      setModalMessage(`Error: ${error.message}`);
+      setModalMessage(
+        `Error: ${error.response?.data?.msg || error.message || "Gagal menambahkan produk."}`
+      );
       setIsModalOpen(true);
     } finally {
       setLoading(false);
@@ -208,7 +207,6 @@ const AddProduct = () => {
               )}
             </div>
           </div>
-          
           <div className="flex flex-col gap-2">
             <label htmlFor="categoryId" className="font-medium">
               Kategori
@@ -234,7 +232,6 @@ const AddProduct = () => {
               <p className="text-red-500 text-sm">{errors.categoryId}</p>
             )}
           </div>
-
           <div className="flex items-center gap-2 mt-2">
             <input
               type="checkbox"
@@ -248,7 +245,6 @@ const AddProduct = () => {
               Tandai sebagai Produk Unggulan
             </label>
           </div>
-
           <div className="flex flex-col gap-2">
             <label htmlFor="imageUrl" className="font-medium">
               Gambar Produk
@@ -268,17 +264,17 @@ const AddProduct = () => {
               <p className="text-red-500 text-sm">{errors.imageUrl}</p>
             )}
           </div>
-
           <Button type="submit" variant="primary" className="mt-4" disabled={loading}>
             {loading ? <Loader /> : "Tambah Produk"}
           </Button>
         </form>
       </Card>
-      
       <Modal isOpen={isModalOpen} onClose={handleModalClose} title={modalTitle}>
         <p>{modalMessage}</p>
         <div className="mt-4 flex justify-end">
-          <Button variant="primary" onClick={handleModalClose}>OK</Button>
+          <Button variant="primary" onClick={handleModalClose}>
+            OK
+          </Button>
         </div>
       </Modal>
     </div>

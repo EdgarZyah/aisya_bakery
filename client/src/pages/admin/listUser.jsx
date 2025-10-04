@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import Table from "../../components/common/table";
-import Loader from "../../components/common/loader";
-import SearchBar from "../../components/searchBar";
 import Button from "../../components/common/button";
+import Loader from "../../components/common/loader";
 import Modal from "../../components/common/modal";
 import Pagination from "../../components/pagination";
-
-const API_URL = "http://localhost:5000/api/auth/users";
+import SearchBar from "../../components/searchBar";
+import axiosClient from "../../api/axiosClient";
 
 const ListUser = () => {
   const [users, setUsers] = useState([]);
@@ -25,8 +25,8 @@ const ListUser = () => {
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  
-  const loggedInUser = JSON.parse(localStorage.getItem('user'));
+
+  const loggedInUser = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
     fetchUsers();
@@ -40,21 +40,13 @@ const ListUser = () => {
       setLoading(false);
       return;
     }
-
     try {
-      const response = await fetch(API_URL, {
-        headers: {
-          "x-auth-token": token,
-        },
+      const response = await axiosClient.get("/auth/users", {
+        headers: { "x-auth-token": token },
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.msg || "Gagal memuat data pengguna");
-      }
-      const data = await response.json();
-      setUsers(data);
+      setUsers(response.data);
+      setError(null);
     } catch (e) {
-      console.error(e);
       setError(e.message);
       setModalTitle("Error");
       setModalMessage(e.message);
@@ -77,18 +69,16 @@ const ListUser = () => {
   const handleUpdateRole = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(`${API_URL}/role/${userToUpdate.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-auth-token": token,
-        },
-        body: JSON.stringify({ role: newRole }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.msg || "Gagal mengubah role pengguna.");
-      }
+      await axiosClient.put(
+        `/auth/users/role/${userToUpdate.id}`,
+        { role: newRole },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "x-auth-token": token,
+          },
+        }
+      );
       setIsEditRoleModalOpen(false);
       setModalTitle("Berhasil");
       setModalMessage(`Role pengguna berhasil diubah menjadi ${newRole}.`);
@@ -97,7 +87,7 @@ const ListUser = () => {
     } catch (e) {
       setIsEditRoleModalOpen(false);
       setModalTitle("Error");
-      setModalMessage(`Error: ${e.message}`);
+      setModalMessage(`Error: ${e.response?.data?.msg || e.message}`);
       setIsModalOpen(true);
     }
   };
@@ -111,28 +101,25 @@ const ListUser = () => {
     }
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(`${API_URL}/${userToUpdate.id}/password`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-auth-token": token,
-        },
-        body: JSON.stringify({ newPassword, confirmNewPassword }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Gagal mengubah password.");
-      }
+      await axiosClient.put(
+        `/auth/users/${userToUpdate.id}/password`,
+        { newPassword, confirmNewPassword },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "x-auth-token": token,
+          },
+        }
+      );
       setIsPasswordModalOpen(false);
       setModalTitle("Berhasil");
       setModalMessage("Password berhasil diperbarui.");
       setIsModalOpen(true);
-      // Reset form password
       setNewPassword("");
       setConfirmNewPassword("");
     } catch (e) {
       setModalTitle("Error");
-      setModalMessage(`Error: ${e.message}`);
+      setModalMessage(`Error: ${e.response?.data?.msg || e.message}`);
       setIsModalOpen(true);
     }
   };
@@ -249,7 +236,7 @@ const ListUser = () => {
           </Button>
         </div>
       </Modal>
-      
+
       {/* Modal Ganti Password */}
       <Modal
         isOpen={isPasswordModalOpen}
@@ -277,8 +264,12 @@ const ListUser = () => {
           </div>
         </div>
         <div className="mt-4 flex justify-end gap-2">
-          <Button variant="outline" onClick={handleCloseModal}>Batal</Button>
-          <Button variant="primary" onClick={handleUpdatePassword}>Simpan Password</Button>
+          <Button variant="outline" onClick={handleCloseModal}>
+            Batal
+          </Button>
+          <Button variant="primary" onClick={handleUpdatePassword}>
+            Simpan Password
+          </Button>
         </div>
       </Modal>
 

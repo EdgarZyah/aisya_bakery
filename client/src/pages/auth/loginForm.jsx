@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Button from "../../components/common/button";
 import { Link, useNavigate } from "react-router-dom";
 import Modal from "../../components/common/modal";
+import axiosClient from "../../api/axiosClient";
 
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -25,17 +26,10 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
+      const response = await axiosClient.post("/auth/login", form, {
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-      }
+      const data = response.data;
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
@@ -44,11 +38,14 @@ const Login = () => {
       setModalMessage("Login berhasil!");
       setRedirectTo(data.user.role === 'admin' ? "/admin/dashboard" : "/user/dashboard");
       setIsModalOpen(true);
-
     } catch (error) {
       console.error("Login Error:", error.message);
       setModalTitle("Login Gagal");
-      setModalMessage(`Login gagal: ${error.message}`);
+      setModalMessage(
+        `Login gagal: ${
+          error.response?.data?.message || error.message || "Unknown error"
+        }`
+      );
       setRedirectTo(null);
       setIsModalOpen(true);
     }

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import Table from "../../components/common/table";
-import Modal from "../../components/common/modal";
 import Loader from "../../components/common/loader";
+import SearchBar from "../../components/searchBar";
 import Button from "../../components/common/button";
-import { FaFileExcel } from 'react-icons/fa';
+import Modal from "../../components/common/modal";
 import Pagination from "../../components/pagination";
-
-const API_URL = "http://localhost:5000/api/orders";
+import { FaFileExcel } from "react-icons/fa";
+import axiosClient, { BASE_URL_IMAGES } from "../../api/axiosClient";
 
 const Order = () => {
   const [orders, setOrders] = useState([]);
@@ -24,16 +24,12 @@ const Order = () => {
     setLoading(true);
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(API_URL, {
+      const response = await axiosClient.get("/orders", {
         headers: { "x-auth-token": token },
       });
-      if (!response.ok) {
-        throw new Error("Gagal memuat data pesanan.");
-      }
-      const data = await response.json();
-      setOrders(data);
+      setOrders(response.data);
+      setError(null);
     } catch (e) {
-      console.error(e);
       setError(e.message);
       setMessageTitle("Error");
       setMessageContent(e.message);
@@ -56,7 +52,7 @@ const Order = () => {
     setIsModalOpen(false);
     setSelectedOrder(null);
   };
-  
+
   const handleCloseMessageModal = () => {
     setIsMessageModalOpen(false);
     setMessageTitle("");
@@ -66,37 +62,42 @@ const Order = () => {
   const handleStatusChange = async (orderId, newStatus) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(`${API_URL}/${orderId}/status`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-auth-token": token,
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (!response.ok) {
-        throw new Error("Gagal memperbarui status pesanan.");
-      }
-      setOrders(orders.map(order =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      ));
+      await axiosClient.put(
+        `/orders/${orderId}/status`,
+        { status: newStatus },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "x-auth-token": token,
+          },
+        }
+      );
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.id === orderId ? { ...order, status: newStatus } : order
+        )
+      );
       setMessageTitle("Berhasil");
       setMessageContent("Status pesanan berhasil diperbarui!");
       setIsMessageModalOpen(true);
     } catch (e) {
       setMessageTitle("Error");
-      setMessageContent(`Error: ${e.message}`);
+      setMessageContent(`Error: ${e.response?.data?.msg || e.message}`);
       setIsMessageModalOpen(true);
     }
   };
 
   const handleExport = (format) => {
     const token = localStorage.getItem("token");
-    window.open(`${API_URL}/export/${format}?token=${token}`, "_blank");
+    window.open(`${axiosClient.defaults.baseURL}/orders/export/${format}?token=${token}`, "_blank");
   };
 
   const columns = [
-    { header: "Tanggal", accessor: "createdAt", cell: (row) => new Date(row.createdAt).toLocaleDateString() },
+    {
+      header: "Tanggal",
+      accessor: "createdAt",
+      cell: (row) => new Date(row.createdAt).toLocaleDateString(),
+    },
     { header: "ID Pesanan", accessor: "id" },
     {
       header: "Nama Pembeli",
@@ -126,7 +127,7 @@ const Order = () => {
       ),
     },
   ];
-  
+
   const totalPages = Math.ceil(orders.length / itemsPerPage);
   const paginatedData = orders.slice(
     (currentPage - 1) * itemsPerPage,
@@ -150,7 +151,11 @@ const Order = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-semibold">Riwayat Transaksi</h2>
         <div className="flex gap-2">
-          <Button variant="primary" onClick={() => handleExport('excel')} className="flex items-center gap-2">
+          <Button
+            variant="primary"
+            onClick={() => handleExport("excel")}
+            className="flex items-center gap-2"
+          >
             <FaFileExcel /> Unduh Excel
           </Button>
         </div>
@@ -171,22 +176,35 @@ const Order = () => {
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} title="Detail Pesanan">
         {selectedOrder && (
           <div className="space-y-4">
-            <p><strong>ID Pesanan:</strong> {selectedOrder.id}</p>
-            <p><strong>Nama Pembeli:</strong> {selectedOrder.user?.name || "Pengguna Tidak Terdaftar"}</p>
-            <p><strong>Alamat:</strong> {selectedOrder.user?.address || "Tidak ada"}</p>
-            <p><strong>No. Telepon:</strong> {selectedOrder.user?.phoneNumber || "Tidak ada"}</p>
-            <p><strong>Tanggal:</strong> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
-            <p><strong>Status:</strong> {selectedOrder.status}</p>
-            
+            <p>
+              <strong>ID Pesanan:</strong> {selectedOrder.id}
+            </p>
+            <p>
+              <strong>Nama Pembeli:</strong> {selectedOrder.user?.name || "Pengguna Tidak Terdaftar"}
+            </p>
+            <p>
+              <strong>Alamat:</strong> {selectedOrder.user?.address || "Tidak ada"}
+            </p>
+            <p>
+              <strong>No. Telepon:</strong> {selectedOrder.user?.phoneNumber || "Tidak ada"}
+            </p>
+            <p>
+              <strong>Tanggal:</strong> {new Date(selectedOrder.createdAt).toLocaleString()}
+            </p>
+            <p>
+              <strong>Status:</strong> {selectedOrder.status}
+            </p>
+
             <h4 className="font-semibold text-lg">Item Pesanan:</h4>
             <ul className="list-disc list-inside">
               {selectedOrder.orderItems.map((item) => (
                 <li key={item.id}>
-                  {item.product.name} ({item.quantity}x) - Rp {item.product.price.toLocaleString("id-ID")}
+                  {item.product.name} ({item.quantity}x) - Rp{" "}
+                  {item.product.price.toLocaleString("id-ID")}
                 </li>
               ))}
             </ul>
-            
+
             <div className="mt-4 font-bold text-lg">
               Total: Rp {selectedOrder.total.toLocaleString("id-ID")}
             </div>
@@ -195,7 +213,7 @@ const Order = () => {
               <div className="mt-4">
                 <h4 className="font-semibold">Bukti Pembayaran:</h4>
                 <a
-                  href={`http://localhost:5000/${selectedOrder.paymentProofUrl}`}
+                  href={`${BASE_URL_IMAGES}/${selectedOrder.paymentProofUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline"
@@ -207,11 +225,17 @@ const Order = () => {
           </div>
         )}
       </Modal>
-      
-      <Modal isOpen={isMessageModalOpen} onClose={handleCloseMessageModal} title={messageTitle}>
+
+      <Modal
+        isOpen={isMessageModalOpen}
+        onClose={handleCloseMessageModal}
+        title={messageTitle}
+      >
         <p>{messageContent}</p>
         <div className="mt-4 flex justify-end">
-          <Button variant="primary" onClick={handleCloseMessageModal}>OK</Button>
+          <Button variant="primary" onClick={handleCloseMessageModal}>
+            OK
+          </Button>
         </div>
       </Modal>
     </div>

@@ -1,10 +1,8 @@
-// client/src/components/featuredProducts.jsx
 import React, { useState, useEffect } from "react";
 import ProductCard from "./productCard";
 import Loader from "./common/loader";
 import { Link } from "react-router-dom";
-
-const API_URL = "http://localhost:5000/api/products?featured=true"; // <-- Diperbarui
+import axiosClient from "../api/axiosClient";
 
 const FeaturedProducts = () => {
   const [products, setProducts] = useState([]);
@@ -17,12 +15,10 @@ const FeaturedProducts = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch(API_URL);
-      if (!response.ok) {
-        throw new Error("Gagal memuat produk unggulan.");
-      }
-      const data = await response.json();
-      setProducts(data);
+      const response = await axiosClient.get("/products", {
+        params: { featured: true },
+      });
+      setProducts(response.data);
     } catch (e) {
       console.error("Fetch Featured Products Error:", e);
       setError("Gagal memuat produk. Silakan coba lagi nanti.");
