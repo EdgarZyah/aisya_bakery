@@ -1,11 +1,12 @@
 import React from "react";
 import Button from "./common/button";
+import BreadHero from "../assets/bakery-background-hand-drawn-bread-seamless-pattern-motif-wallpaper-bake-shop-backdrop-packaging-food-wrapper-vector.jpg"
 
 const Hero = ({ title, subtitle, ctaText, onCtaClick }) => {
   return (
     <section className="relative overflow-hidden text-center text-[var(--color-background)]">
       <img
-        src="https://static.vecteezy.com/system/resources/previews/055/490/267/non_2x/bakery-background-hand-drawn-bread-seamless-pattern-motif-wallpaper-bake-shop-backdrop-packaging-food-wrapper-vector.jpg"
+        src={BreadHero}
         alt="Hero Background"
         className="w-full h-[400px] object-cover brightness-50"
       />

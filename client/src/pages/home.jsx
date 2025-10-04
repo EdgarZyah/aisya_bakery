@@ -1,7 +1,8 @@
 import React from "react";
 import Hero from "../components/hero";
 import FeaturedProducts from "../components/featuredProducts";
-import Testimoni from "../components/testimoni"; // Impor komponen Testimoni
+import Testimoni from "../components/testimoni";
+import BreadHero from "../assets/bread-rye-bread-baked-goods-baguette-wallpaper-preview.jpg"
 
 const Home = () => {
   return (
@@ -14,9 +15,9 @@ const Home = () => {
       {/* About Us Section */}
       <section className="relative flex w-full min-h-[800px] bg-[var(--color-primary)] -mb-12">
         <img
-          src="https://www.shutterstock.com/image-photo/fresh-baked-bread-flour-wheat-600nw-2409821173.jpg"
+          src={BreadHero}
           alt="Bread pattern background"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover brightness-40"
         />
         <div className="relative z-10 max-w-5xl flex flex-col items-center mx-12 my-6 sm:m-auto px-6 py-16 text-center bg-white text-[var(--color-primary)] rounded-lg">
           <h2 className="text-3xl font-semibold mb-4">Tentang Kami</h2>
@@ -59,7 +60,7 @@ const Home = () => {
       </section>
       {/* Map Section */}
       <div className="bg-[var(--color-primary)] mx-auto py-10 px-6">
-        <div className="max-w-5xl m-auto rounded-lg space-y-6 shadow-md aspect-video">
+        <div className="max-w-5xl m-auto space-y-6 shadow-md aspect-video">
           <h1 className="text-center text-3xl font-semibold text-purewhite">
             Lokasi Toko Kami
           </h1>
