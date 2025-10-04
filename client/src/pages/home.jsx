@@ -59,7 +59,7 @@ const Home = () => {
       </section>
       {/* Map Section */}
       <div className="bg-[var(--color-primary)] mx-auto py-10 px-6">
-        <div className="max-w-5xl m-auto rounded-lg space-y-6 overflow-hidden shadow-md aspect-video">
+        <div className="max-w-5xl m-auto rounded-lg space-y-6 shadow-md aspect-video">
           <h1 className="text-center text-3xl font-semibold text-purewhite">
             Lokasi Toko Kami
           </h1>
