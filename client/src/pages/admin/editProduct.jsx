@@ -4,7 +4,8 @@ import Button from "../../components/common/button";
 import Loader from "../../components/common/loader";
 import Card from "../../components/common/card";
 import Modal from "../../components/common/modal";
-import axiosClient from "../../api/axiosClient";
+// Perbaikan: Impor BASE_URL_IMAGES dari axiosClient
+import axiosClient, { BASE_URL_IMAGES } from "../../api/axiosClient";
 
 const EditProduct = () => {
   const { id } = useParams();
@@ -251,14 +252,14 @@ const EditProduct = () => {
                 errors.imageUrl ? "border-red-500" : ""
               }`}
               accept=".jpg,.jpeg,.png"
-              required
             />
             {/* Tampilan gambar saat ini jika ada */}
             {form.oldImageUrl && (
               <div className="mb-4">
                 <p className="mb-2">Gambar Saat Ini:</p>
                 <img
-                  src={`http://localhost:5000/${form.oldImageUrl}`}
+                  // Perbaikan: Gunakan BASE_URL_IMAGES untuk URL gambar yang dinamis
+                  src={`${BASE_URL_IMAGES}/${form.oldImageUrl}`}
                   alt="Produk Saat Ini"
                   className="w-32 h-32 object-cover rounded"
                 />

@@ -10,10 +10,13 @@ module.exports = (sequelize, DataTypes) => {
         as: 'orders'
       });
     }
+
+    // Verifikasi password
     validPassword(password) {
       return bcrypt.compareSync(password, this.password);
     }
   }
+
   User.init({
     name: {
       type: DataTypes.STRING,
@@ -44,18 +47,16 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'User',
-    hooks: {
-      beforeCreate: async (user) => {
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
-      },
-      beforeUpdate: async (user) => {
-        if (user.changed('password')) {
-          const salt = await bcrypt.genSalt(10);
-          user.password = await bcrypt.hash(user.password, salt);
-        }
-      }
+  });
+
+  // 🔐 Hash password hanya sekali, di satu tempat
+  User.addHook('beforeSave', async (user) => {
+    // Hanya hash jika password baru diubah DAN belum dalam format bcrypt
+    if (user.changed('password') && !user.password.startsWith('$2a$')) {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(user.password, salt);
     }
   });
+
   return User;
 };

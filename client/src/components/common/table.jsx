@@ -26,7 +26,8 @@ const Table = ({ columns, data, renderActions }) => {
               <tr key={row.id || index} className="hover:bg-gray-100">
                 {columns.map((col) => (
                   <td key={col.accessor} className="border border-gray-300 px-4 py-2">
-                    {col.cell ? col.cell(row) : row[col.accessor]}
+                    {/* Perbaikan di sini: Teruskan 'index' sebagai argumen kedua */}
+                    {col.cell ? col.cell(row, index) : row[col.accessor]}
                   </td>
                 ))}
                 {renderActions && (

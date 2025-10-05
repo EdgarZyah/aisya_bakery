@@ -36,8 +36,8 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ 
   storage: storage,
-  fileFilter: fileFilter, // Menerapkan file filter
-  limits: { fileSize: 5 * 1024 * 1024 } // Batasan ukuran file 5MB
+  fileFilter: fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
 router.get('/', async (req, res) => {
@@ -92,7 +92,8 @@ router.get('/:id', async (req, res) => {
 router.post('/', auth, admin, upload.single('imageUrl'), async (req, res) => {
   try {
     const { name, description, price, stock, categoryId, isFeatured } = req.body;
-    const imageUrl = req.file ? req.file.path : null;
+    // Perbaikan: Normalisasi path gambar untuk kompatibilitas sistem operasi
+    const imageUrl = req.file ? path.normalize(req.file.path) : null;
 
     const newProduct = await Product.create({
       name,
@@ -100,8 +101,8 @@ router.post('/', auth, admin, upload.single('imageUrl'), async (req, res) => {
       price: parseFloat(price),
       stock: parseInt(stock),
       imageUrl,
-      categoryId: parseInt(categoryId), // Perbaikan: Mengonversi ke integer
-      isFeatured: isFeatured === 'true', // Perbaikan: Mengonversi ke boolean
+      categoryId: parseInt(categoryId),
+      isFeatured: isFeatured === 'true',
     });
     res.status(201).json(newProduct);
   } catch (error) {
@@ -120,20 +121,33 @@ router.put('/:id', auth, admin, upload.single('imageUrl'), async (req, res) => {
       return res.status(404).json({ error: 'Produk tidak ditemukan' });
     }
 
-    if (req.file && product.imageUrl && fs.existsSync(product.imageUrl)) {
-      fs.unlinkSync(product.imageUrl);
+    // Tentukan URL gambar yang baru
+    let newImageUrl = product.imageUrl;
+    
+    // Jika ada file baru yang diunggah, hapus gambar lama
+    if (req.file) {
+      // Hapus file gambar lama jika ada dan pastikan file tersebut ada secara fisik
+      if (product.imageUrl && fs.existsSync(product.imageUrl)) {
+        fs.unlinkSync(product.imageUrl);
+      }
+      // Perbaikan: Normalisasi path gambar yang baru
+      newImageUrl = path.normalize(req.file.path);
     }
 
     const updatedData = {
       name,
       description,
       price: parseFloat(price),
+      stock: parseInt(stock),
+      categoryId: parseInt(categoryId),
+      isFeatured: isFeatured === 'true',
+      imageUrl: newImageUrl,
     };
 
     await product.update(updatedData);
     res.json(product);
   } catch (error) {
-    console.error(error);
+    console.error('Error updating product:', error); // Log error untuk debugging
     res.status(500).json({ error: 'Gagal memperbarui produk' });
   }
 });
