@@ -130,6 +130,25 @@ ${form.message}
           </div>
         </form>
       </div>
+            {/* Map Section */}
+       {/* Sesuaikan padding */}
+      <div className="bg-[var(--color-primary)] mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        {/* Beri sedikit ruang vertikal untuk mobile */}
+        <div className="max-w-5xl m-auto space-y-4 sm:space-y-6 shadow-md aspect-video">
+           {/* Sesuaikan ukuran judul */}
+          <h1 className="text-center text-2xl sm:text-3xl font-semibold text-purewhite">
+            Lokasi Toko Kami
+          </h1>
+          {/* Pastikan iframe memiliki tinggi yang cukup di mobile, aspect-video membantu */}
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3957.2064722791883!2d108.6799144!3d-7.3306931!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e6f7d7f00d30735%3A0x3ba843376824279d!2sAisya%20Cake%2C%20Bread%20%26%20Cookies!5e0!3m2!1sid!2sid!4v1758958114116!5m2!1sid!2sid"
+            className="w-full h-full border-0 rounded" // Tambahkan rounded jika diinginkan
+            allowFullScreen={true} // Gunakan camelCase untuk props React
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          ></iframe>
+        </div>
+      </div>
     </main>
   );
 };

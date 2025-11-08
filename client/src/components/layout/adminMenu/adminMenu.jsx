@@ -1,6 +1,15 @@
 // aisya_bakery/client/src/components/layout/adminMenu.jsx
 import React from "react";
-import { FaTachometerAlt, FaUsers, FaBox, FaClipboardList, FaAddressBook, FaCertificate, FaSignOutAlt } from "react-icons/fa";
+import {
+  FaTachometerAlt,
+  FaUsers,
+  FaBox,
+  FaClipboardList,
+  FaAddressBook,
+  FaCertificate,
+  FaSignOutAlt,
+  FaHome,
+} from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 export const adminMenu = [
@@ -28,5 +37,10 @@ export const adminMenu = [
     label: "Testimonial",
     to: "/admin/testimonials",
     icon: <FaCertificate />,
+  },
+  {
+    label: "Beranda",
+    to: "/",
+    icon: <FaHome />,
   },
 ];

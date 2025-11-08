@@ -5,7 +5,7 @@ const Category = db.Category;
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 
-// GET semua kategori
+// GET list semua kategori
 router.get('/', async (req, res) => {
   try {
     const categories = await Category.findAll();
@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST kategori baru (Hanya Admin)
+// POST tambah kategori 
 router.post('/', auth, admin, async (req, res) => {
   const { name } = req.body;
   if (!name) {
@@ -31,7 +31,7 @@ router.post('/', auth, admin, async (req, res) => {
   }
 });
 
-// DELETE kategori (Hanya Admin)
+// DELETE kategori
 router.delete('/:id', auth, admin, async (req, res) => {
   try {
     const category = await Category.findByPk(req.params.id);

@@ -2,26 +2,32 @@ import React from "react";
 import Hero from "../components/hero";
 import FeaturedProducts from "../components/featuredProducts";
 import Testimoni from "../components/testimoni";
-import BreadHero from "../assets/bread-rye-bread-baked-goods-baguette-wallpaper-preview.jpg"
+import BreadHero from "../assets/bread-rye-bread-baked-goods-baguette-wallpaper-preview.jpg";
 
 const Home = () => {
   return (
-    <main className="w-full mx-auto">
-      {/* Hero Section */}
+    // Hapus w-full mx-auto di sini jika layout utama sudah menanganinya
+    <main>
+      {/* Hero Section - Diasumsikan sudah responsif */}
       <Hero
         title="Selamat Datang di Aisya Bakery"
         subtitle="Nikmati aroma segar roti dan kue kami yang dibuat dengan cinta dan bahan alami."
       />
+
       {/* About Us Section */}
-      <section className="relative flex w-full min-h-[800px] bg-[var(--color-primary)] -mb-12">
+      {/* Kurangi min-height dan sesuaikan padding/margin */}
+      <section className="relative flex w-full min-h-[600px] sm:min-h-[700px] bg-[var(--color-primary)] -mb-12 py-12 px-4 sm:px-6 lg:px-8">
         <img
           src={BreadHero}
           alt="Bread pattern background"
           className="absolute inset-0 w-full h-full object-cover brightness-40"
         />
-        <div className="relative z-10 max-w-5xl flex flex-col items-center mx-12 my-6 sm:m-auto px-6 py-16 text-center bg-white text-[var(--color-primary)] rounded-lg">
-          <h2 className="text-3xl font-semibold mb-4">Tentang Kami</h2>
-          <p className="max-w-3xl mx-auto leading-relaxed">
+        {/* Kontainer konten About Us */}
+        <div className="relative z-10 w-full max-w-5xl flex flex-col items-center mx-auto my-auto px-4 py-10 sm:px-6 sm:py-16 text-center bg-white text-[var(--color-primary)] rounded-lg">
+           {/* Sesuaikan ukuran judul untuk mobile */}
+          <h2 className="text-2xl sm:text-3xl font-semibold mb-4">Tentang Kami</h2>
+          {/* Pastikan max-width tidak terlalu besar untuk mobile */}
+          <p className="max-w-3xl mx-auto leading-relaxed text-sm sm:text-base">
             Kami adalah bakery lokal dengan pengalaman puluhan tahun yang secara
             konsisten menghadirkan produk roti dan kue berkualitas tinggi untuk
             dinikmati oleh keluarga dan komunitas sekitar. Dengan mengedepankan
@@ -42,38 +48,28 @@ const Home = () => {
           </p>
         </div>
       </section>
+
       {/* Featured Products Section */}
-      <section className="max-w-5xl mx-auto px-6 py-16 mt-10">
+      {/* Sesuaikan padding */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 mt-10">
         <div className="w-full mb-8">
-          <h1 className="text-center text-3xl font-semibold text-[var(--color-primary)]">
+           {/* Sesuaikan ukuran judul */}
+          <h1 className="text-center text-2xl sm:text-3xl font-semibold text-[var(--color-primary)]">
             Produk Unggulan
           </h1>
         </div>
+        {/* Tambahkan padding di div ini jika perlu, atau biarkan default */}
         <div className="flex justify-start mb-8">
-          <div className="w-full bg-[var(--color-background)] rounded-lg p-6">
-            <p className="text-center text-[var(--color-text)]">
+          <div className="w-full bg-[var(--color-background)] rounded-lg p-4 sm:p-6">
+            <p className="text-center text-[var(--color-text)] text-sm sm:text-base">
               Pilih produk unggulan terbaik kami yang selalu segar dan lezat.
             </p>
           </div>
         </div>
+        {/* FeaturedProducts diasumsikan sudah responsif */}
         <FeaturedProducts />
       </section>
-      {/* Map Section */}
-      <div className="bg-[var(--color-primary)] mx-auto py-10 px-6">
-        <div className="max-w-5xl m-auto space-y-6 shadow-md aspect-video">
-          <h1 className="text-center text-3xl font-semibold text-purewhite">
-            Lokasi Toko Kami
-          </h1>
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3957.2064722791883!2d108.6799144!3d-7.3306931!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e6f7d7f00d30735%3A0x3ba843376824279d!2sAisya%20Cake%2C%20Bread%20%26%20Cookies!5e0!3m2!1sid!2sid!4v1758958114116!5m2!1sid!2sid"
-            className="w-full h-full border-0"
-            allowfullscreen="true"
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"
-          ></iframe>
-        </div>
-      </div>
-      {/* Testimonials Section (Carousel) */}
+      {/* Testimonials Section (Carousel) - Diasumsikan sudah responsif */}
       <Testimoni />
     </main>
   );

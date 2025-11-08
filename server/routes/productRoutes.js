@@ -92,7 +92,6 @@ router.get('/:id', async (req, res) => {
 router.post('/', auth, admin, upload.single('imageUrl'), async (req, res) => {
   try {
     const { name, description, price, stock, categoryId, isFeatured } = req.body;
-    // Perbaikan: Normalisasi path gambar untuk kompatibilitas sistem operasi
     const imageUrl = req.file ? path.normalize(req.file.path) : null;
 
     const newProduct = await Product.create({

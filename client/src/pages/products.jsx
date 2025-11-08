@@ -6,7 +6,6 @@ import CategoryMenu from "../components/categoryMenu";
 import ProductCard from "../components/productCard";
 import Pagination from "../components/pagination";
 import Loader from "../components/common/loader";
-
 import axiosClient from "../api/axiosClient"; // import axiosClient
 
 const Products = ({ onAddToCart }) => {
@@ -15,26 +14,30 @@ const Products = ({ onAddToCart }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [search, setSearch] = useState("");
+  // State untuk input search bar
+  const [searchInput, setSearchInput] = useState("");
+  // State untuk query pencarian yang dikirim ke server
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCat, setSelectedCat] = useState("all");
 
   const [page, setPage] = useState(1);
   const pageSize = 9;
 
   // Fetch categories + products dengan axiosClient
+  // Ubah dependensi useEffect menjadi searchTerm dan selectedCat
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Fetch kategori
+        // Fetch kategori (tetap sama)
         const catResponse = await axiosClient.get("/categories");
         setCategories([{ id: "all", name: "Semua" }, ...catResponse.data]);
 
-        // Fetch produk (dengan filter search & kategori)
+        // Fetch produk (gunakan searchTerm untuk filter)
         const params = {};
-        if (search) params.search = search;
+        if (searchTerm) params.search = searchTerm; // Gunakan searchTerm
         if (selectedCat !== "all") params.categoryId = selectedCat;
 
         const productResponse = await axiosClient.get("/products", { params });
@@ -48,13 +51,20 @@ const Products = ({ onAddToCart }) => {
     };
 
     fetchData();
-  }, [search, selectedCat]);
+  }, [searchTerm, selectedCat]); // Ubah dependensi di sini
 
-  // Pagination
+  // Pagination (tetap sama)
   const totalPages = Math.ceil(products.length / pageSize);
   const paginated = products.slice((page - 1) * pageSize, page * pageSize);
 
-  // State: Loading
+  // Handler untuk submit search bar
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setSearchTerm(searchInput); // Update searchTerm saat submit
+    setPage(1); // Reset halaman ke 1 saat pencarian baru
+  };
+
+  // State: Loading (tetap sama)
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -63,7 +73,7 @@ const Products = ({ onAddToCart }) => {
     );
   }
 
-  // State: Error
+  // State: Error (tetap sama)
   if (error) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -74,7 +84,7 @@ const Products = ({ onAddToCart }) => {
 
   return (
     <main className="w-full mx-auto">
-      {/* Hero Section */}
+      {/* Hero Section (tetap sama) */}
       <Hero
         title="Produk Roti & Kue Terbaik"
         subtitle="Nikmati pilihan roti dan kue segar dengan cita rasa istimewa setiap hari."
@@ -84,15 +94,14 @@ const Products = ({ onAddToCart }) => {
       <div className="flex flex-col sm:flex-row gap-6 max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Sidebar kiri */}
         <aside className="sm:w-64 space-y-6">
+          {/* SearchBar diupdate propsnya */}
           <SearchBar
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onSubmit={(e) => {
-              e.preventDefault();
-              setPage(1);
-            }}
+            value={searchInput} // Gunakan searchInput untuk value
+            onChange={(e) => setSearchInput(e.target.value)} // Update searchInput saat mengetik
+            onSubmit={handleSearchSubmit} // Panggil handleSearchSubmit saat submit
           />
 
+          {/* CategoryMenu (tetap sama) */}
           <CategoryMenu
             categories={categories}
             selected={selectedCat}
@@ -103,9 +112,9 @@ const Products = ({ onAddToCart }) => {
           />
         </aside>
 
-        {/* Konten produk */}
+        {/* Konten produk (tetap sama) */}
         <section className="flex-1 space-y-11">
-          {/* Info jumlah produk */}
+          {/* Info jumlah produk (tetap sama) */}
           <div className="flex justify-between items-center text-sm text-gray-600">
             <span>
               Menampilkan{" "}
@@ -117,7 +126,7 @@ const Products = ({ onAddToCart }) => {
             </span>
           </div>
 
-          {/* Grid produk */}
+          {/* Grid produk (tetap sama) */}
           {paginated.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {paginated.map((product) => (
@@ -134,7 +143,7 @@ const Products = ({ onAddToCart }) => {
             </div>
           )}
 
-          {/* Pagination */}
+          {/* Pagination (tetap sama) */}
           {totalPages > 1 && (
             <Pagination page={page} totalPages={totalPages} onChange={setPage} />
           )}

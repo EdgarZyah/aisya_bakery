@@ -72,7 +72,7 @@ const ListProduct = () => {
   };
 
   const columns = [
-    { header: "#", accessor: "index", cell: (row, idx) => idx + 1 },
+    { header: "No", accessor: "index", cell: (row, idx) => idx + 1 },
     { header: "Nama Produk", accessor: "name" },
     {
       header: "Kategori",

@@ -1,6 +1,6 @@
 // aisya_bakery/client/src/components/layout/userMenu.jsx
 import React from "react";
-import { FaTachometerAlt, FaShoppingCart, FaUser } from "react-icons/fa";
+import { FaTachometerAlt, FaShoppingCart, FaUser, FaHome } from "react-icons/fa";
 
 export const userMenu = [
   {
@@ -17,5 +17,10 @@ export const userMenu = [
     label: "Profil",
     to: "/user/profile",
     icon: <FaUser />,
+  },
+  {
+    label: "Beranda",
+    to: "/",
+    icon: <FaHome />,
   },
 ];
