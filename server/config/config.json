@@ -7,17 +7,17 @@
     "dialect": "mysql"
   },
   "test": {
-    "username": "root",
-    "password": null,
-    "database": "aisya_bakery_test",
+    "username": "loge1722_aisya",
+    "password": "banyumas123",
+    "database": "loge1722_aisya_bakery",
     "host": "127.0.0.1",
     "dialect": "mysql"
   },
   "production": {
-    "username": "root",
-    "password": null,
-    "database": "aisya_bakery_prod",
-    "host": "127.0.0.1",
+    "username": "loge1722_aisya",
+    "password": "banyumas123",
+    "database": "loge1722_aisya_bakery",
+    "host": "localhost",
     "dialect": "mysql"
   }
 }

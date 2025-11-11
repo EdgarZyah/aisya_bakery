@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom"; // Import useLocation
 import { FiShoppingCart, FiMenu, FiX, FiLogOut } from "react-icons/fi";
+// [PERBAIKAN] Path import diperbarui tanpa ekstensi
 import CartDropdown from "../cartDropdown";
-import Logo from "../../assets/logo.png";
 import Modal from "../common/modal";
 import Button from "../common/button";
+import Logo from "../../assets/logo.png";
 
-const Navbar = ({ cartItems, onRemoveItem }) => {
+const Navbar = ({ cartItems, onRemoveItem, onUpdateCartItem }) => { // [TAMBAHAN] Menerima onUpdateCartItem
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [user, setUser] = useState(null);
@@ -50,7 +51,7 @@ const Navbar = ({ cartItems, onRemoveItem }) => {
 
 
   const handleCheckout = () => {
-    navigate("/checkout", { state: { cartItems } });
+    navigate("/checkout"); // State tidak perlu dikirim, App.jsx mengelola state
     setCartOpen(false);
   };
 
@@ -135,16 +136,23 @@ const Navbar = ({ cartItems, onRemoveItem }) => {
                    <FiShoppingCart className="h-6 w-6 text-[var(--color-primary)]" />
                    {cartItems.length > 0 && (
                      <span className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full text-xs font-bold w-5 h-5 flex items-center justify-center">
-                       {cartItems.reduce((acc, item) => acc + item.quantity, 0)}
+                       
+                       {/* --- [MODIFIKASI] --- */}
+                       {/* Menggunakan 'length' untuk jenis barang, bukan 'reduce' untuk kuantitas */}
+                       {cartItems.length}
+                       {/* --- Akhir Modifikasi --- */}
+
                      </span>
                    )}
                  </button>
-                 <CartDropdown
-                   items={cartItems}
-                   isOpen={cartOpen}
-                   onRemoveItem={onRemoveItem}
-                   onCheckout={handleCheckout}
-                 />
+                <CartDropdown
+                  items={cartItems}
+                  isOpen={cartOpen}
+                  onRemoveItem={onRemoveItem}
+                  onCheckout={handleCheckout}
+                  // [TAMBAHAN] Prop diteruskan ke dropdown
+                  onUpdateCartItem={onUpdateCartItem} 
+                />
                </div>
                {user ? (
                  <button
@@ -195,8 +203,7 @@ const Navbar = ({ cartItems, onRemoveItem }) => {
           {user && (
             <Link
               to={user.role === "admin" ? "/admin/dashboard" : "/user/dashboard"}
-              // Style khusus dashboard (jika berbeda) atau gunakan logika active biasa jika sama
-              className={`${mobileNavLinkBaseClass} bg-[var(--color-primary)] text-white hover:bg-[var(--color-secondary)]`} // Ini sudah konsisten dengan desktop
+              className={`${mobileNavLinkBaseClass} bg-[var(--color-primary)] text-white hover:bg-[var(--color-secondary)]`} 
               onClick={closeMobileMenu}
             >
               Dashboard
@@ -209,8 +216,7 @@ const Navbar = ({ cartItems, onRemoveItem }) => {
                 handleLogoutClick();
                 closeMobileMenu();
               }}
-               // Gunakan base class, hover class merah spesifik
-              className={`${mobileNavLinkBaseClass} text-red-600 hover:bg-red-500 hover:text-white`}
+               className={`${mobileNavLinkBaseClass} text-red-600 hover:bg-red-500 hover:text-white`}
             >
                <div className="flex items-center space-x-2">
                  <FiLogOut />
@@ -218,7 +224,6 @@ const Navbar = ({ cartItems, onRemoveItem }) => {
                </div>
             </button>
           ) : (
-            // Gunakan base class dan hover class standar
             <Link
               to="/login"
               className={`${mobileNavLinkBaseClass} ${mobileNavLinkHoverClass}`}
@@ -231,7 +236,6 @@ const Navbar = ({ cartItems, onRemoveItem }) => {
       </div>
 
       {/* Logout Confirmation Modal */}
-      {/* ... (Modal tetap sama) ... */}
        <Modal isOpen={isModalOpen} onClose={handleModalClose} title={modalTitle}>
          <p>{modalMessage}</p>
          {isConfirmLogoutOpen ? (

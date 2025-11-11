@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Button from "./common/button";
+// [PERBAIKAN] Path import Button diperbarui
+import Button from "../components/common/button.jsx";
+// [PERBAIKAN] Impor BASE_URL_IMAGES
+import { BASE_URL_IMAGES } from "../api/axiosClient.js";
 
-const CartDropdown = ({ items, onRemoveItem, onCheckout, isOpen }) => {
+const CartDropdown = ({
+  items,
+  onRemoveItem,
+  onCheckout,
+  isOpen,
+  onUpdateCartItem,
+}) => {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
 
@@ -19,9 +28,10 @@ const CartDropdown = ({ items, onRemoveItem, onCheckout, isOpen }) => {
   // Jika mobile dan dropdown ingin ditampilkan, redirect ke halaman checkout
   useEffect(() => {
     if (isMobile && isOpen) {
-      navigate("/checkout", { state: { cartItems: items } });
+      // Mengirim state cartItems tidak diperlukan karena App.jsx mengelola state global
+      navigate("/checkout");
     }
-  }, [isMobile, isOpen, navigate, items]);
+  }, [isMobile, isOpen, navigate]);
 
   if (!isOpen || isMobile) return null;
 
@@ -30,22 +40,37 @@ const CartDropdown = ({ items, onRemoveItem, onCheckout, isOpen }) => {
     return sum + item.price * item.quantity;
   }, 0);
 
+  // Fallback image sederhana jika item.image error
+  const handleImageError = (e) => {
+    e.target.src = "https://placehold.co/48x48/e0e0e0/757575?text=Img";
+  };
+
   return (
     <div className="absolute right-0 mt-2 w-80 bg-[var(--color-background)] rounded-md shadow-lg border border-gray-200 z-50">
       <div className="p-4 max-h-80 overflow-y-auto">
         {items.length === 0 ? (
-          <p className="text-center text-[var(--color-text)]">Keranjang kosong</p>
+          <p className="text-center text-[var(--color-text)]">
+            Keranjang kosong
+          </p>
         ) : (
           items.map((item) => (
-            <div key={item.id} className="flex items-center justify-between mb-3">
+            <div
+              key={item.id}
+              className="flex items-center justify-between mb-3"
+            >
               <div className="flex items-center space-x-3">
                 <img
-                  src={item.image}
+                  // [PERBAIKAN] Path gambar diperbarui dengan BASE_URL_IMAGES
+                  src={`${BASE_URL_IMAGES}/${item.image}`}
                   alt={item.name}
                   className="w-12 h-12 rounded object-cover"
+                  // [TAMBAHAN] Fallback jika gambar gagal dimuat
+                  onError={handleImageError}
                 />
                 <div>
-                  <p className="text-sm font-semibold text-[var(--color-text)]">{item.name}</p>
+                  <p className="text-sm font-semibold text-[var(--color-text)]">
+                    {item.name}
+                  </p>
                   <p className="text-xs text-[var(--color-primary)]">
                     {item.quantity} × Rp {item.price.toLocaleString("id-ID")}
                   </p>
@@ -53,7 +78,7 @@ const CartDropdown = ({ items, onRemoveItem, onCheckout, isOpen }) => {
               </div>
               <button
                 onClick={() => onRemoveItem(item.id)}
-                className="text-red-600 hover:text-red-800 text-sm font-bold"
+                className="text-red-600 hover:text-red-800 text-lg font-bold self-start"
                 aria-label={`Hapus ${item.name} dari keranjang`}
               >
                 ×

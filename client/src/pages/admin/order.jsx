@@ -116,7 +116,15 @@ const Order = () => {
         <select
           value={row.status}
           onChange={(e) => handleStatusChange(row.id, e.target.value)}
-          className="p-1 border rounded"
+          // [MODIFIKASI] Styling dropdown status agar lebih jelas
+          className={`p-2 border rounded-md text-sm ${
+            row.status === "pending" ? "bg-yellow-100 border-yellow-300" :
+            row.status === "processed" ? "bg-blue-100 border-blue-300" :
+            row.status === "shipped" ? "bg-indigo-100 border-indigo-300" :
+            row.status === "delivered" ? "bg-green-100 border-green-300" :
+            row.status === "cancelled" ? "bg-red-100 border-red-300" :
+            "bg-gray-100 border-gray-300"
+          }`}
         >
           <option value="pending">Pending</option>
           <option value="processed">Diproses</option>
@@ -173,56 +181,89 @@ const Order = () => {
         )}
       />
       <Pagination page={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title="Detail Pesanan">
+      
+      {/* --- [MODIFIKASI] Tampilan Modal Detail --- */}
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={`Detail Pesanan #${selectedOrder?.id}`}>
         {selectedOrder && (
-          <div className="space-y-4">
-            <p>
-              <strong>ID Pesanan:</strong> {selectedOrder.id}
-            </p>
-            <p>
-              <strong>Nama Pembeli:</strong> {selectedOrder.user?.name || "Pengguna Tidak Terdaftar"}
-            </p>
-            <p>
-              <strong>Alamat:</strong> {selectedOrder.user?.address || "Tidak ada"}
-            </p>
-            <p>
-              <strong>No. Telepon:</strong> {selectedOrder.user?.phoneNumber || "Tidak ada"}
-            </p>
-            <p>
-              <strong>Tanggal:</strong> {new Date(selectedOrder.createdAt).toLocaleString()}
-            </p>
-            <p>
-              <strong>Status:</strong> {selectedOrder.status}
-            </p>
+          // Kalkulasi rincian biaya di dalam IIFE
+          (() => {
+            const subtotal = selectedOrder.orderItems.reduce((acc, item) => {
+              const price = item.product?.price || 0;
+              return acc + (price * item.quantity);
+            }, 0);
+            
+            const shippingCost = selectedOrder.total - subtotal;
 
-            <h4 className="font-semibold text-lg">Item Pesanan:</h4>
-            <ul className="list-disc list-inside">
-              {selectedOrder.orderItems.map((item) => (
-                <li key={item.id}>
-                  {item.product.name} ({item.quantity}x) - Rp{" "}
-                  {item.product.price.toLocaleString("id-ID")}
-                </li>
-              ))}
-            </ul>
+            return (
+              <div className="space-y-4">
+                
+                <h4 className="font-semibold text-lg">Informasi Pelanggan:</h4>
+                <div className="text-sm space-y-1">
+                  <p><strong>Nama:</strong> {selectedOrder.user?.name || "Pengguna Tidak Terdaftar"}</p>
+                  <p><strong>Alamat:</strong> {selectedOrder.user?.address || "Tidak ada"}</p>
+                  <p><strong>No. Telepon:</strong> {selectedOrder.user?.phoneNumber || "Tidak ada"}</p>
+                </div>
 
-            <div className="mt-4 font-bold text-lg">
-              Total: Rp {selectedOrder.total.toLocaleString("id-ID")}
-            </div>
+                <hr />
 
-            {selectedOrder.paymentProofUrl && (
-              <div className="mt-4">
-                <h4 className="font-semibold">Bukti Pembayaran:</h4>
-                <a
-                  href={`${BASE_URL_IMAGES}/${selectedOrder.paymentProofUrl}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  Lihat Bukti Pembayaran
-                </a>
+                <h4 className="font-semibold text-lg">Informasi Pesanan:</h4>
+                <div className="text-sm space-y-1">
+                  <p><strong>ID Pesanan:</strong> {selectedOrder.id}</p>
+                  <p><strong>Tanggal:</strong> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
+                  <p><strong>Status:</strong> {selectedOrder.status}</p>
+                </div>
+
+                <hr />
+
+                <h4 className="font-semibold text-lg">Item Pesanan:</h4>
+                <ul className="list-disc list-inside text-sm">
+                  {selectedOrder.orderItems.map((item) => (
+                    <li key={item.id}>
+                      {item.product.name} ({item.quantity}x) - @ Rp{" "}
+                      {(item.product.price || 0).toLocaleString("id-ID")}
+                    </li>
+                  ))}
+                </ul>
+
+                <hr />
+
+                {/* [BARU] Rincian Biaya */}
+                <h4 className="font-semibold text-lg">Rincian Biaya:</h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Subtotal (Item):</span>
+                    <span>Rp {subtotal.toLocaleString('id-ID')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Biaya Pengiriman:</span>
+                    {/* Pastikan ongkir tidak negatif jika ada diskon */}
+                    <span>Rp {Math.max(0, shippingCost).toLocaleString('id-ID')}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-base border-t pt-2 mt-2 text-[var(--color-primary)]">
+                    <span>Total Pesanan:</span>
+                    <span>Rp {selectedOrder.total.toLocaleString('id-ID')}</span>
+                  </div>
+                </div>
+
+                {selectedOrder.paymentProofUrl && (
+                  <>
+                    <hr />
+                    <div className="mt-4">
+                      <h4 className="font-semibold text-lg">Bukti Pembayaran:</h4>
+                      <a
+                        href={`${BASE_URL_IMAGES}/${selectedOrder.paymentProofUrl}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        Lihat Bukti Pembayaran
+                      </a>
+                    </div>
+                  </>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })() // Akhir IIFE
         )}
       </Modal>
 

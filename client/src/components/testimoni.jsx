@@ -130,7 +130,7 @@ const Testimoni = () => {
                         alt={testimonial.name}
                         className="rounded-full w-16 h-16 sm:w-20 sm:h-20 mb-3 sm:mb-4 object-cover border-2 border-[var(--color-background)]" // Slightly smaller avatar on mobile
                       />
-                      <p className="italic text-center text-sm sm:text-base flex-grow overflow-y-auto mb-2 sm:mb-4"> {/* Allow text scrolling if needed */}
+                      <p className="italic content-center text-center text-sm sm:text-base flex-grow overflow-y-auto mb-2 sm:mb-4"> {/* Allow text scrolling if needed */}
                          "{truncateString(testimonial.comment, 150)}"
                        </p>
                       <h4 className="font-semibold mt-auto text-sm sm:text-base">{testimonial.name}</h4>

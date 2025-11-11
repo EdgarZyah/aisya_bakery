@@ -21,7 +21,7 @@ app.use(express.json());
 // Konfigurasi CORS eksplisit untuk mengizinkan frontend Anda
 const corsOptions = {
   // Hanya mengizinkan permintaan dari domain frontend yang Anda deploy
-  origin: "https://api.logikarya.my.id", 
+  origin: "https://aisyabakery.site",  
   optionsSuccessStatus: 200, // Untuk kompatibilitas browser lama
 };
 app.use(cors(corsOptions));
